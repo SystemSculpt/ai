@@ -38,6 +38,7 @@
     "clean": "premove ./build ./dist",
     "lint:fix": "oxlint src --type-aware --fix",
     "test:oxlint": "oxlint src --type-aware",
+    "test:coverage": "vitest run --coverage --coverage.include=src/** --coverage.reporter=text-summary --coverage.reporter=json-summary",
     "test:lib": "vitest run",
     "test:lib:dev": "pnpm test:lib --watch",
     "test:types": "tsc",
@@ -62,7 +63,7 @@
     "@mcp-ui/client": "^7.1.1",
     "@tanstack/ai": "workspace:*",
     "@testing-library/preact": "^3.2.4",
-    "@vitest/coverage-v8": "4.0.14",
+    "@vitest/coverage-v8": "4.1.10",
     "jsdom": "^27.2.0",
     "preact": "^10.26.9",
     "vite": "^8.1.4"
