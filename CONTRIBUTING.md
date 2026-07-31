@@ -48,7 +48,7 @@ All commands are run from the repo root. Nx handles affected detection and cachi
 | Run unit tests (affected)     | `pnpm test:lib`     |
 | Watch unit tests              | `pnpm test:lib:dev` |
 | Type-check (affected)         | `pnpm test:types`   |
-| Lint (affected)               | `pnpm test:eslint`  |
+| Lint (affected)               | `pnpm test:oxlint`  |
 | Verify build artifacts        | `pnpm test:build`   |
 | Format the repo               | `pnpm format`       |
 | Build (affected)              | `pnpm build`        |
@@ -106,7 +106,7 @@ Tests are included in typecheck. `vite.config.ts` / `vitest.config.ts` are not �
 
 - Place tests under `packages/<pkg>/tests/` with the suffix `.test.ts` (or `.test.tsx` for JSX).
 - Vitest's defaults discover anything matching `**/*.{test,spec}.?(c|m)[jt]s?(x)` — no per-package config is needed.
-- Tests are typechecked by `tsc` and linted by ESLint.
+- Tests are typechecked by `tsc` and linted by oxlint.
 
 ## Adding E2E test coverage (required)
 
@@ -148,7 +148,7 @@ The defensive `ignore` list in `.changeset/config.json` blocks accidental public
 ## Pull request flow
 
 1. Push your branch and open a PR against `main`.
-2. CI runs: `pnpm test:pr` (sherif workspace check, knip dead-code, docs link verification, ESLint, unit tests, typecheck, build artifacts, build) + the full E2E suite.
+2. CI runs: `pnpm test:pr` (sherif workspace check, knip dead-code, docs link verification, oxlint, unit tests, typecheck, build artifacts, build), the `Coverage` regression gate, and the full E2E suite.
 3. Address review comments.
 4. A maintainer merges. Releases are cut via Changesets — your changeset entry lands in the next release.
 
