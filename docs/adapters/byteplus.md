@@ -335,6 +335,24 @@ Resolutions are per model too, and the shipped table comes from live probes rath
 
 Reference media follows the shared [role hints](../media/video-generation#role-hints) — `start_frame`, `end_frame` and `reference`. The Seedance 2.0 family takes full multimodal references (reference images, video and audio); the 1.x models take start/end frames only, and `seedance-1-0-pro-fast-251015` takes a start frame only.
 
+**Video and audio references are URL-only.** Seedance accepts inline `data:` URIs for images (first frame, last frame, reference stills), but **not** for `reference_video` or `reference_audio` — Ark answers `400 InvalidParameter: reference_video must be provided as a web url`. Host the file somewhere publicly reachable (or register it in the Ark asset library and pass `asset://…`) and pass `source: { type: 'url', value: 'https://…' }`. The adapter rejects base64 / data URIs for those modalities locally before the request leaves.
+
+```typescript
+const { jobId } = await generateVideo({
+  adapter: byteplusVideo('dreamina-seedance-2-0-260128'),
+  prompt: [
+    { type: 'text', content: 'Extend this clip with a slow dolly-in' },
+    {
+      type: 'video',
+      // Must be a public URL — inline base64 is rejected.
+      source: { type: 'url', value: 'https://example.com/clip.mp4' },
+    },
+  ],
+  size: '16:9_720p',
+  duration: 5,
+})
+```
+
 ### Seedance 2.5
 
 Seedance 2.5 was announced on 2026-07-31, initially on BytePlus's consumer surfaces. Its Ark id — `dreamina-seedance-2-5-260628` — is real and reachable, but it is **activation-gated per account**: until the model is switched on in the Ark Console, Ark answers `404 ModelNotOpen`.

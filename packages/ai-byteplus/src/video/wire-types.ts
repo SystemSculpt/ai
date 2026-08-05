@@ -68,7 +68,8 @@ export interface BytePlusVideoTextContent {
 
 /**
  * An image input. A public URL is fetched by BytePlus server-side; a
- * `data:` URI carries the bytes inline.
+ * `data:` URI carries the bytes inline. Images are the only media kind
+ * Seedance accepts inline — video and audio do not.
  */
 export interface BytePlusVideoImageContent {
   type: 'image_url'
@@ -77,7 +78,14 @@ export interface BytePlusVideoImageContent {
   role?: BytePlusVideoContentRole
 }
 
-/** A video input. Reference-media mode requires `role: 'reference_video'`. */
+/**
+ * A video input. Reference-media mode requires `role: 'reference_video'`.
+ *
+ * **URL only** — Seedance rejects inline data with
+ * `400 InvalidParameter: reference_video must be provided as a web url`.
+ * Pass a publicly reachable `http(s)://` URL (or an Ark `asset://` id from
+ * the asset library). The adapter enforces this before the request goes out.
+ */
 export interface BytePlusVideoVideoContent {
   type: 'video_url'
   video_url: { url: string }
@@ -87,6 +95,8 @@ export interface BytePlusVideoVideoContent {
 /**
  * An audio input. Live-verified: audio can only accompany another reference
  * input — "reference_audio cannot be the only reference input".
+ *
+ * Same URL-only rule as {@link BytePlusVideoVideoContent}: no data URIs.
  */
 export interface BytePlusVideoAudioContent {
   type: 'audio_url'

@@ -478,6 +478,80 @@ describe('createVideoJob content roles', () => {
     ])
   })
 
+  it('accepts Ark asset:// ids for reference video', async () => {
+    const fetchMock = mockFetch(() => jsonResponse({ id: JOB_ID }))
+    const adapter = adapterWithFetch(fetchMock, 'dreamina-seedance-2-0-260128')
+
+    await adapter.createVideoJob(
+      createOptions({
+        prompt: [
+          {
+            type: 'video',
+            source: { type: 'url', value: 'asset://asset-abc123' },
+          },
+        ],
+      }),
+    )
+
+    expect(sentRequest(fetchMock).content).toEqual([
+      {
+        type: 'video_url',
+        video_url: { url: 'asset://asset-abc123' },
+        role: 'reference_video',
+      },
+    ])
+  })
+
+  it('rejects inline data for reference video before the request goes out', async () => {
+    const fetchMock = mockFetch(() => jsonResponse({ id: JOB_ID }))
+    const adapter = adapterWithFetch(fetchMock, 'dreamina-seedance-2-0-260128')
+
+    await expect(
+      adapter.createVideoJob(
+        createOptions({
+          prompt: [
+            {
+              type: 'video',
+              source: {
+                type: 'data',
+                value: 'AAAA',
+                mimeType: 'video/mp4',
+              },
+            },
+          ],
+        }),
+      ),
+    ).rejects.toThrow(/reference_video must be a publicly reachable/)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('rejects data: URLs passed as source.type url for reference audio', async () => {
+    const fetchMock = mockFetch(() => jsonResponse({ id: JOB_ID }))
+    const adapter = adapterWithFetch(fetchMock, 'dreamina-seedance-2-0-260128')
+
+    await expect(
+      adapter.createVideoJob(
+        createOptions({
+          prompt: [
+            {
+              type: 'image',
+              source: { type: 'url', value: 'https://x/ref.jpg' },
+              metadata: { role: 'reference' },
+            },
+            {
+              type: 'audio',
+              source: {
+                type: 'url',
+                value: 'data:audio/wav;base64,AAAA',
+              },
+            },
+          ],
+        }),
+      ),
+    ).rejects.toThrow(/reference_audio must be a publicly reachable/)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
   it('sends base64 image sources as data URIs', async () => {
     const fetchMock = mockFetch(() => jsonResponse({ id: JOB_ID }))
     const adapter = adapterWithFetch(fetchMock, 'seedance-1-0-pro-250528')

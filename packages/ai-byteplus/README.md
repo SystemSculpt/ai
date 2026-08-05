@@ -126,6 +126,11 @@ return toServerSentEventsResponse(stream)
 **Generated video URLs expire after 24 hours** (the task record itself is kept
 for 7 days), so download anything you need to keep.
 
+**Reference video/audio must be public URLs.** Seedance accepts inline `data:`
+URIs for images, but not for `reference_video` / `reference_audio` — host the
+file and pass `source: { type: 'url', value: 'https://…' }` (or an Ark
+`asset://…` id).
+
 ### Image (Seedream)
 
 ```typescript
