@@ -65,20 +65,55 @@ const TASKS_PATH = '/contents/generations/tasks'
 const VIDEO_URL_TTL_MS = 24 * 60 * 60 * 1000
 
 /**
- * Converts a media prompt part into the URL string Seedance's `content[]`
- * takes: public URLs pass through (BytePlus fetches them server-side), data
- * sources become base64 data URIs.
+ * Converts an **image** prompt part into the URL string Seedance's
+ * `content[]` takes: public URLs pass through (BytePlus fetches them
+ * server-side); data sources become base64 data URIs.
+ *
+ * Images only. Video and audio references must be remote URLs — see
+ * {@link mediaPartToRemoteUrl}.
  */
-function mediaPartToUrl(
-  part:
-    | ImagePart<MediaInputMetadata>
-    | VideoPart<MediaInputMetadata>
-    | AudioPart<MediaInputMetadata>,
-): string {
+function mediaPartToImageUrl(part: ImagePart<MediaInputMetadata>): string {
   const { source } = part
   if (source.type === 'url') return source.value
   if (source.value.startsWith('data:')) return source.value
   return `data:${source.mimeType.toLowerCase()};base64,${source.value}`
+}
+
+/**
+ * Converts a **video** or **audio** prompt part into a remote URL for
+ * Seedance's `reference_video` / `reference_audio` roles.
+ *
+ * Unlike images, Seedance **does not** accept inline data URIs for video or
+ * audio references — Ark answers
+ * `400 InvalidParameter: reference_video must be provided as a web url`.
+ * Host the file somewhere public (or register it in the Ark asset library as
+ * `asset://…`) and pass `source: { type: 'url' }`.
+ *
+ * Accepted forms: `https://…`, `http://…`, `asset://…`.
+ */
+function mediaPartToRemoteUrl(
+  part: VideoPart<MediaInputMetadata> | AudioPart<MediaInputMetadata>,
+  kind: 'video' | 'audio',
+): string {
+  const { source } = part
+  if (source.type === 'data' || source.value.startsWith('data:')) {
+    throw new Error(
+      `byteplus: Seedance reference_${kind} must be a publicly reachable ` +
+        `web URL (or an Ark asset:// id) — inline base64 / data URIs are ` +
+        `not accepted by the API. Host the ${kind} and pass ` +
+        `source: { type: 'url', value: 'https://…' }.`,
+    )
+  }
+  if (
+    !/^https?:\/\//i.test(source.value) &&
+    !source.value.startsWith('asset://')
+  ) {
+    throw new Error(
+      `byteplus: Seedance reference_${kind} must be an http(s) URL or ` +
+        `asset:// id; got ${JSON.stringify(source.value.slice(0, 64))}.`,
+    )
+  }
+  return source.value
 }
 
 /** Coerces a usage count that the API types as a string but sends as a number. */
@@ -267,7 +302,7 @@ export class BytePlusVideoAdapter<
           lastFrames++
           content.push({
             type: 'image_url',
-            image_url: { url: mediaPartToUrl(part) },
+            image_url: { url: mediaPartToImageUrl(part) },
             role: 'last_frame',
           })
           break
@@ -284,7 +319,7 @@ export class BytePlusVideoAdapter<
           visualReferences++
           content.push({
             type: 'image_url',
-            image_url: { url: mediaPartToUrl(part) },
+            image_url: { url: mediaPartToImageUrl(part) },
             role: 'reference_image',
           })
           break
@@ -296,7 +331,7 @@ export class BytePlusVideoAdapter<
           firstFrames++
           content.push({
             type: 'image_url',
-            image_url: { url: mediaPartToUrl(part) },
+            image_url: { url: mediaPartToImageUrl(part) },
             role: 'first_frame',
           })
           break
@@ -307,6 +342,8 @@ export class BytePlusVideoAdapter<
     // Video and audio parts only exist in reference mode: Seedance rejects an
     // un-roled video with "reference media mode requires video role to be
     // reference_video", and has no frame-style role for either modality.
+    // Both modalities also require a *remote* URL — inline data is rejected
+    // up front so callers don't burn a round-trip on a guaranteed 400.
     for (const part of resolved.videos) {
       if (gated && !supportsReferenceMedia(model)) {
         throw new Error(
@@ -317,7 +354,7 @@ export class BytePlusVideoAdapter<
       visualReferences++
       content.push({
         type: 'video_url',
-        video_url: { url: mediaPartToUrl(part) },
+        video_url: { url: mediaPartToRemoteUrl(part, 'video') },
         role: 'reference_video',
       })
     }
@@ -332,7 +369,7 @@ export class BytePlusVideoAdapter<
       audioReferences++
       content.push({
         type: 'audio_url',
-        audio_url: { url: mediaPartToUrl(part) },
+        audio_url: { url: mediaPartToRemoteUrl(part, 'audio') },
         role: 'reference_audio',
       })
     }

@@ -55,8 +55,7 @@ export function toImagePart(
 
 /**
  * Builds a video prompt part from an attached video clip — e.g. a reference
- * clip or a video to edit for Gemini Omni Flash, which accepts video inputs
- * alongside text and images.
+ * clip or a video to edit for Gemini Omni Flash / Seedance reference mode.
  */
 export function toVideoPart(
   video: AttachedMedia,
@@ -67,6 +66,30 @@ export function toVideoPart(
     source: { type: 'data', value: video.base64, mimeType: video.mimeType },
     ...(metadata ? { metadata } : {}),
   }
+}
+
+/**
+ * Builds an audio prompt part from an attached clip — Seedance 2.0 reference
+ * mode accepts `reference_audio` (needs at least one visual reference too).
+ */
+export function toAudioPart(
+  audio: AttachedMedia,
+  metadata?: MediaInputMetadata,
+): MediaPromptPart {
+  return {
+    type: 'audio',
+    source: { type: 'data', value: audio.base64, mimeType: audio.mimeType },
+    ...(metadata ? { metadata } : {}),
+  }
+}
+
+/** Classify a browser File / AttachedMedia mime into a Seedance ref modality. */
+export function mediaKindFromMime(
+  mimeType: string,
+): 'image' | 'video' | 'audio' {
+  if (mimeType.startsWith('video/')) return 'video'
+  if (mimeType.startsWith('audio/')) return 'audio'
+  return 'image'
 }
 
 /**

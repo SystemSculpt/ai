@@ -1,13 +1,16 @@
 import { useState } from 'react'
-import { Link, createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { Clapperboard, Film, ImageIcon, Sparkles } from 'lucide-react'
 import ImageGenerator from '@/components/ImageGenerator'
 import VideoGenerator from '@/components/VideoGenerator'
 import OmniStudio from '@/components/OmniStudio'
+import SeedanceStudio from '@/components/SeedanceStudio'
+import { getSeedanceCapabilitiesFn } from '@/lib/server-functions'
 
-type Tab = 'image' | 'video' | 'omni'
+type Tab = 'image' | 'video' | 'omni' | 'seedance'
 
 function VisualPage() {
+  const capabilities = Route.useLoaderData()
   const [activeTab, setActiveTab] = useState<Tab>('image')
   const [lastGeneratedImage, setLastGeneratedImage] = useState<string | null>(
     null,
@@ -25,8 +28,9 @@ function VisualPage() {
           </p>
         </div>
 
-        <div className="flex gap-2 mb-6">
+        <div className="flex flex-wrap gap-2 mb-6">
           <button
+            type="button"
             onClick={() => setActiveTab('image')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
               activeTab === 'image'
@@ -38,6 +42,7 @@ function VisualPage() {
             Image
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('video')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
               activeTab === 'video'
@@ -49,6 +54,7 @@ function VisualPage() {
             Video
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('omni')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
               activeTab === 'omni'
@@ -59,13 +65,18 @@ function VisualPage() {
             <Sparkles className="w-5 h-5" />
             Omni Studio
           </button>
-          <Link
-            to="/seedance"
-            className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors bg-gray-800 text-gray-300 hover:bg-gray-700"
+          <button
+            type="button"
+            onClick={() => setActiveTab('seedance')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === 'seedance'
+                ? 'bg-cyan-600 text-white'
+                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+            }`}
           >
             <Clapperboard className="w-5 h-5" />
             Seedance Studio
-          </Link>
+          </button>
         </div>
 
         <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
@@ -73,8 +84,10 @@ function VisualPage() {
             <ImageGenerator onImageGenerated={setLastGeneratedImage} />
           ) : activeTab === 'video' ? (
             <VideoGenerator initialImageUrl={lastGeneratedImage} />
-          ) : (
+          ) : activeTab === 'omni' ? (
             <OmniStudio />
+          ) : (
+            <SeedanceStudio capabilities={capabilities} />
           )}
         </div>
       </div>
@@ -82,6 +95,35 @@ function VisualPage() {
   )
 }
 
+function VisualPageError({ error }: { error: Error }) {
+  return (
+    <div className="min-h-[calc(100vh-72px)] bg-gray-900 p-6">
+      <div className="max-w-3xl mx-auto">
+        <h1 className="text-3xl font-bold text-white mb-2">
+          Visual Content Generator
+        </h1>
+        <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+          <p className="text-red-400 text-sm">
+            Could not load Seedance capability metadata from{' '}
+            <code>@tanstack/ai-byteplus</code>: {error.message}
+          </p>
+          <p className="text-gray-400 text-sm mt-2">
+            The Seedance Studio tab drives its controls off that table. Rebuild
+            the workspace packages and check{' '}
+            <code>getSeedanceCapabilitiesFn</code> against the current{' '}
+            <code>availableDurations()</code> contract.
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export const Route = createFileRoute('/')({
+  // Capability table is static adapter metadata — load once for the Seedance
+  // tab instead of a separate route (same pattern as the former /seedance
+  // loader).
+  loader: () => getSeedanceCapabilitiesFn(),
   component: VisualPage,
+  errorComponent: VisualPageError,
 })

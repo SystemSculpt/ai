@@ -896,6 +896,12 @@ importers:
       '@tanstack/ai-grok':
         specifier: workspace:*
         version: link:../../packages/ai-grok
+      '@tanstack/ai-openai':
+        specifier: workspace:*
+        version: link:../../packages/ai-openai
+      '@tanstack/ai-persistence':
+        specifier: workspace:*
+        version: link:../../packages/ai-persistence
       '@tanstack/ai-react':
         specifier: workspace:*
         version: link:../../packages/ai-react
@@ -923,6 +929,9 @@ importers:
       tailwindcss:
         specifier: ^4.1.18
         version: 4.1.18
+      zod:
+        specifier: ^4.2.0
+        version: 4.3.6
     devDependencies:
       '@types/node':
         specifier: ^24.10.1

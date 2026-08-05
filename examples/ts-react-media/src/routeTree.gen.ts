@@ -9,9 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SeedanceChatRouteImport } from './routes/seedance-chat'
 import { Route as SeedanceRouteImport } from './routes/seedance'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiSeedanceChatRouteImport } from './routes/api.seedance-chat'
+import { Route as ApiArtifactsRouteImport } from './routes/api.artifacts'
 
+const SeedanceChatRoute = SeedanceChatRouteImport.update({
+  id: '/seedance-chat',
+  path: '/seedance-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SeedanceRoute = SeedanceRouteImport.update({
   id: '/seedance',
   path: '/seedance',
@@ -22,35 +30,80 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSeedanceChatRoute = ApiSeedanceChatRouteImport.update({
+  id: '/api/seedance-chat',
+  path: '/api/seedance-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiArtifactsRoute = ApiArtifactsRouteImport.update({
+  id: '/api/artifacts',
+  path: '/api/artifacts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/seedance': typeof SeedanceRoute
+  '/seedance-chat': typeof SeedanceChatRoute
+  '/api/artifacts': typeof ApiArtifactsRoute
+  '/api/seedance-chat': typeof ApiSeedanceChatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/seedance': typeof SeedanceRoute
+  '/seedance-chat': typeof SeedanceChatRoute
+  '/api/artifacts': typeof ApiArtifactsRoute
+  '/api/seedance-chat': typeof ApiSeedanceChatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/seedance': typeof SeedanceRoute
+  '/seedance-chat': typeof SeedanceChatRoute
+  '/api/artifacts': typeof ApiArtifactsRoute
+  '/api/seedance-chat': typeof ApiSeedanceChatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/seedance'
+  fullPaths:
+    | '/'
+    | '/seedance'
+    | '/seedance-chat'
+    | '/api/artifacts'
+    | '/api/seedance-chat'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/seedance'
-  id: '__root__' | '/' | '/seedance'
+  to:
+    | '/'
+    | '/seedance'
+    | '/seedance-chat'
+    | '/api/artifacts'
+    | '/api/seedance-chat'
+  id:
+    | '__root__'
+    | '/'
+    | '/seedance'
+    | '/seedance-chat'
+    | '/api/artifacts'
+    | '/api/seedance-chat'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SeedanceRoute: typeof SeedanceRoute
+  SeedanceChatRoute: typeof SeedanceChatRoute
+  ApiArtifactsRoute: typeof ApiArtifactsRoute
+  ApiSeedanceChatRoute: typeof ApiSeedanceChatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/seedance-chat': {
+      id: '/seedance-chat'
+      path: '/seedance-chat'
+      fullPath: '/seedance-chat'
+      preLoaderRoute: typeof SeedanceChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/seedance': {
       id: '/seedance'
       path: '/seedance'
@@ -65,12 +118,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/seedance-chat': {
+      id: '/api/seedance-chat'
+      path: '/api/seedance-chat'
+      fullPath: '/api/seedance-chat'
+      preLoaderRoute: typeof ApiSeedanceChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/artifacts': {
+      id: '/api/artifacts'
+      path: '/api/artifacts'
+      fullPath: '/api/artifacts'
+      preLoaderRoute: typeof ApiArtifactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SeedanceRoute: SeedanceRoute,
+  SeedanceChatRoute: SeedanceChatRoute,
+  ApiArtifactsRoute: ApiArtifactsRoute,
+  ApiSeedanceChatRoute: ApiSeedanceChatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

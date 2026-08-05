@@ -3,21 +3,35 @@ import { falImage, falVideo } from '@tanstack/ai-fal'
 import { geminiImage, geminiVideo } from '@tanstack/ai-gemini'
 import { grokImage, grokVideo } from '@tanstack/ai-grok'
 import {
+  BYTEPLUS_ARK_BASE_URL,
   BYTEPLUS_VIDEO_MODELS,
+  bytePlusArkHeaders,
   byteplusImage,
   byteplusVideo,
+  getBytePlusArkApiKeyFromEnv,
   getBytePlusVideoDurationOptions,
   resolveBytePlusVideoResolution,
   supportsLastFrame,
   supportsReferenceMedia,
+  withBytePlusArkDefaults,
 } from '@tanstack/ai-byteplus'
+import type { BytePlusVideoTask } from '@tanstack/ai-byteplus'
 import {
   generateImage,
   generateVideo,
+  memoryStream,
+  replayRunStream,
   toServerSentEventsResponse,
 } from '@tanstack/ai'
+import { getGenerationHydration } from '@tanstack/ai-persistence'
+import { z } from 'zod'
 
 import type { StreamChunk } from '@tanstack/ai'
+import {
+  SEEDANCE_STUDIO_THREAD_ID,
+  generationServerPersistence,
+  seedanceGenerationMiddleware,
+} from './generation-persistence'
 import type {
   BytePlusVideoModel,
   BytePlusVideoModelOrString,
@@ -562,6 +576,11 @@ interface SeedanceRequest {
   // ungated for Ark to judge.
   model: BytePlusVideoModelOrString
   options?: SeedanceJobOptions
+  /**
+   * Scope successive runs are filed under for hydration. Defaults to the
+   * studio slot when omitted (older clients).
+   */
+  threadId?: string
 }
 
 /**
@@ -574,8 +593,18 @@ const SEEDANCE_MAX_DURATION_MS = 30 * 60_000
 const SEEDANCE_POLL_INTERVAL_MS = 5000
 
 /** The create → poll → complete lifecycle for one Seedance task. */
-function seedanceStream(data: SeedanceRequest): AsyncIterable<StreamChunk> {
+async function seedanceStream(
+  data: SeedanceRequest,
+  runId: string,
+): Promise<AsyncIterable<StreamChunk>> {
   const options = data.options ?? {}
+  const threadId = data.threadId?.trim() || SEEDANCE_STUDIO_THREAD_ID
+
+  // Durable `/api/artifacts` URLs are not fetchable by Ark. Images expand to
+  // inline data; video/audio rehydrate to the original Seedance provider
+  // sourceUrl (URL-only — base64 is rejected by Ark).
+  const { materializeSeedancePromptForArk } = await import('./materialize-media')
+  const prompt = await materializeSeedancePromptForArk(data.prompt)
 
   // The studio's camelCase controls map one-to-one onto the provider's own
   // request fields. Applicability is per model and Ark 400s on a field the
@@ -586,6 +615,9 @@ function seedanceStream(data: SeedanceRequest): AsyncIterable<StreamChunk> {
   // so a custom model id sends its sizing through the generic `size`
   // template instead (see `SeedanceJobOptions.size`).
   const modelOptions: BytePlusVideoProviderOptions = {
+    // Always capture the closing frame so the studio can chain "extend"
+    // turns without a second API shape for last-frame retrieval.
+    return_last_frame: true,
     ...(options.size === undefined &&
       options.ratio !== undefined && { ratio: options.ratio }),
     ...(options.size === undefined &&
@@ -631,13 +663,17 @@ function seedanceStream(data: SeedanceRequest): AsyncIterable<StreamChunk> {
     // reference mode takes video and audio parts as well as images (the
     // template presets send both), and which of them a given model allows is
     // the adapter's call — its error names the model and the part.
-    prompt: data.prompt,
+    prompt,
     ...(options.size !== undefined && { size: options.size }),
     ...(duration !== undefined && { duration }),
     modelOptions,
     stream: true,
     pollingInterval: SEEDANCE_POLL_INTERVAL_MS,
     maxDuration: SEEDANCE_MAX_DURATION_MS,
+    // Same runId as the durability log so join can replay exactly this run.
+    threadId,
+    runId,
+    middleware: [seedanceGenerationMiddleware(threadId)],
   })
 }
 
@@ -645,6 +681,10 @@ function seedanceStream(data: SeedanceRequest): AsyncIterable<StreamChunk> {
  * Streams one Seedance task as Server-Sent Events, for the studio's
  * `useGenerateVideo`. The browser never sees ARK_API_KEY or a job id it has
  * to poll with — the server does the waiting and reports status on the wire.
+ *
+ * Persistence: finished video bytes land in the generation blob store and the
+ * result URL is rewritten to `/api/artifacts?id=…`. Delivery durability
+ * (`memoryStream`) lets a reloaded client rejoin an in-flight job.
  */
 export const generateSeedanceVideoFn = createServerFn({ method: 'POST' })
   .inputValidator((data: SeedanceRequest) => {
@@ -652,4 +692,83 @@ export const generateSeedanceVideoFn = createServerFn({ method: 'POST' })
     if (!data.model) throw new Error('Model is required')
     return data
   })
-  .handler(({ data }) => toServerSentEventsResponse(seedanceStream(data)))
+  .handler(async ({ data }) => {
+    const runId = crypto.randomUUID()
+    // Await materialization (durable artifacts → base64) before opening the
+    // SSE stream so Ark never sees an app-relative video URL.
+    const stream = await seedanceStream(data, runId)
+    return toServerSentEventsResponse(stream, {
+      durability: { adapter: memoryStream({ runId }) },
+    })
+  })
+
+/**
+ * Wire shape for mount hydration. Parsed with Zod so TanStack Start gets a
+ * JSON-serializable return type and the store's loose `result` is validated.
+ */
+const generationHydrationSchema = z.object({
+  resumeSnapshot: z
+    .object({
+      schemaVersion: z.literal(1),
+      resumeState: z
+        .object({
+          threadId: z.string(),
+          runId: z.string(),
+        })
+        .nullable(),
+      status: z.enum(['idle', 'running', 'complete', 'error']),
+      result: z.record(z.string(), z.any()).optional(),
+      error: z
+        .object({
+          message: z.string(),
+          code: z.string().optional(),
+        })
+        .optional(),
+      activity: z.string().optional(),
+    })
+    .nullable(),
+  activeRun: z.object({ runId: z.string() }).nullable(),
+})
+
+/** Mount hydration for Seedance Studio `persistence: true` over a fetcher. */
+export const getSeedanceHydrationFn = createServerFn({ method: 'GET' })
+  .inputValidator(z.string().min(1))
+  .handler(async ({ data: threadId }) =>
+    generationHydrationSchema.parse(
+      await getGenerationHydration(generationServerPersistence(), threadId),
+    ),
+  )
+
+/**
+ * Rejoin an in-flight Seedance run (replay + live tail). Returns an SSE
+ * Response the client parses the same way as `generateSeedanceVideoFn`.
+ */
+export const joinSeedanceRunFn = createServerFn({ method: 'GET' })
+  .inputValidator(z.string().min(1))
+  .handler(({ data: runId }) =>
+    toServerSentEventsResponse(replayRunStream(memoryStream({ runId }))),
+  )
+
+/**
+ * Read `content.last_frame_url` from a finished Seedance task. Core's
+ * `VideoUrlResult` only carries the video URL; extend-mode iteration needs the
+ * last-frame PNG. Jobs must have been created with `return_last_frame: true`.
+ */
+export const getSeedanceLastFrameFn = createServerFn({ method: 'GET' })
+  .inputValidator(z.string().min(1))
+  .handler(async ({ data: jobId }): Promise<{ lastFrameUrl?: string }> => {
+    const config = withBytePlusArkDefaults({
+      apiKey: getBytePlusArkApiKeyFromEnv(),
+      baseURL: BYTEPLUS_ARK_BASE_URL,
+    })
+    const response = await fetch(
+      `${config.baseURL}/contents/generations/tasks/${encodeURIComponent(jobId)}`,
+      { headers: bytePlusArkHeaders(config.apiKey) },
+    )
+    if (!response.ok) return {}
+    const body = (await response.json()) as BytePlusVideoTask
+    const lastFrameUrl = body.content?.last_frame_url
+    return typeof lastFrameUrl === 'string' && lastFrameUrl.length > 0
+      ? { lastFrameUrl }
+      : {}
+  })
