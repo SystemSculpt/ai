@@ -103,7 +103,7 @@ Default blob key: `artifacts/<runId>/<artifactId>`.
 Images work with the route above. Video seeking needs `206` + range support:
 
 ```ts group=generation-bytes
-import { parseRangeHeader, retrieveBlob } from '@tanstack/ai-persistence'
+import { parseRangeHeader } from '@tanstack/ai-persistence'
 import type { ArtifactRecord } from '@tanstack/ai-persistence'
 
 export async function serveArtifactBytes(

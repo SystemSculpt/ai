@@ -52,8 +52,13 @@ const { jobId, model } = await generateVideo({
 ### Poll
 
 ```typescript
-import { getVideoJobStatus } from '@tanstack/ai'
+import { generateVideo, getVideoJobStatus } from '@tanstack/ai'
 import { openaiVideo } from '@tanstack/ai-openai'
+
+const { jobId } = await generateVideo({
+  adapter: openaiVideo('sora-2'),
+  prompt: 'A golden retriever puppy playing in a field of sunflowers',
+})
 
 const status = await getVideoJobStatus({
   adapter: openaiVideo('sora-2'),

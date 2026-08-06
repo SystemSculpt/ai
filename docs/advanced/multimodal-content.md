@@ -282,7 +282,7 @@ const stream = chat({
 
 `sendMessage` accepts a string or multimodal payload:
 
-```typescript
+```typescript group=multimodal-content
 import { ChatClient, fetchServerSentEvents } from '@tanstack/ai-client'
 
 const client = new ChatClient({
@@ -304,7 +304,7 @@ await client.sendMessage({
 
 Custom id:
 
-```typescript
+```typescript group=multimodal-content
 await client.sendMessage({
   content: 'Hello!',
   id: 'custom-message-id-123',

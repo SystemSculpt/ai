@@ -146,6 +146,15 @@ const result = await chat({
 ## Errors
 
 ```typescript
+import { chat } from "@tanstack/ai";
+import { openaiText } from "@tanstack/ai-openai";
+import { z } from "zod";
+
+const MySchema = z.object({
+  name: z.string(),
+  age: z.number(),
+});
+
 try {
   const result = await chat({
     adapter: openaiText("gpt-5.5"),
@@ -166,9 +175,25 @@ Schema failures and provider errors both throw.
 ### Plain JSON (no hook)
 
 ```typescript
+import { chat } from "@tanstack/ai";
+import { openaiText } from "@tanstack/ai-openai";
+import { z } from "zod";
+
+const PersonSchema = z.object({
+  name: z.string(),
+  age: z.number(),
+});
+
 // server
 export async function POST(request: Request) {
-  const { text } = await request.json();
+  const body: unknown = await request.json();
+  const text =
+    typeof body === "object" &&
+    body !== null &&
+    "text" in body &&
+    typeof body.text === "string"
+      ? body.text
+      : "";
   const person = await chat({
     adapter: openaiText("gpt-5.5"),
     messages: [{ role: "user", content: `Extract the person info: ${text}` }],
@@ -178,6 +203,7 @@ export async function POST(request: Request) {
 }
 
 // client
+const text = "John is 25 years old";
 const res = await fetch("/api/extract-person", {
   method: "POST",
   body: JSON.stringify({ text }),

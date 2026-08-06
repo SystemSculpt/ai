@@ -28,7 +28,7 @@ Framework hooks (`@tanstack/ai-react`, `-vue`, `-solid`, `-svelte`, `-preact`, `
 3. Call `sendMessage()` / `stop()` / etc.
 4. Call `detach()` when the view goes away (not `stop()` — that ends the run).
 
-```typescript
+```typescript group=ai-client
 import {
   ChatClient,
   fetchServerSentEvents,
@@ -87,19 +87,19 @@ No persistence → `attach()` issues no request.
 
 ### `sendMessage(content)`
 
-```typescript
+```typescript group=ai-client
 await client.sendMessage("Hello!");
 ```
 
 ### `append(message)`
 
-```typescript
+```typescript group=ai-client
 await client.append({ role: "user", content: "Additional context" });
 ```
 
 ### `reload()` / `stop()` / `clear()`
 
-```typescript
+```typescript group=ai-client
 await client.reload();
 client.stop();
 client.clear();
@@ -107,16 +107,14 @@ client.clear();
 
 ### `setMessagesManually(messages)`
 
-```typescript
-import type { UIMessage } from "@tanstack/ai-client";
-
+```typescript group=ai-client
 const newMessages: UIMessage[] = [];
 client.setMessagesManually([...newMessages]);
 ```
 
 ### Tool result / approval
 
-```typescript
+```typescript group=ai-client
 await client.addToolResult({
   toolCallId: "call_123",
   tool: "toolName",
@@ -177,6 +175,12 @@ const xhrHttp = xhrHttpStream("http://192.168.1.10:8787/chat/http", {
 });
 
 const xhrSse = xhrServerSentEvents("http://192.168.1.10:8787/chat/sse");
+```
+
+Custom adapter (illustrative — return an `AsyncIterable` of AG-UI events):
+
+```typescript ignore
+import { stream } from "@tanstack/ai-client";
 
 const custom = stream(async (messages, data, signal) => {
   // `data` is merged forwardedProps

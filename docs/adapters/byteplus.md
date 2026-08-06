@@ -156,7 +156,14 @@ export async function POST(request: Request) {
 Seed reasons by default (`reasoning_content` deltas). Disable:
 
 ```typescript
-modelOptions: { thinking: { type: 'disabled' } }
+import { chat } from '@tanstack/ai'
+import { byteplusText } from '@tanstack/ai-byteplus'
+
+chat({
+  adapter: byteplusText('seed-1-8-251228'),
+  messages: [{ role: 'user', content: 'Hello' }],
+  modelOptions: { thinking: { type: 'disabled' } },
+})
 ```
 
 `disabled` everywhere; `auto` only on `gpt-oss-120b-250805`. `deepseek-v3-2-251201` defaults reasoning *off*.

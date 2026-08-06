@@ -206,6 +206,9 @@ const chat = useRealtimeChat({
 ## Audio visualization
 
 ```typescript
+import { useRealtimeChat } from '@tanstack/ai-react'
+import { elevenlabsRealtime } from '@tanstack/ai-elevenlabs'
+
 const {
   inputLevel,
   outputLevel,

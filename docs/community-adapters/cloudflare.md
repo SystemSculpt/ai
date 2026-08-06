@@ -67,6 +67,8 @@ const adapter = createWorkersAiChat(
 ## Other Workers AI capabilities
 
 ```typescript
+import { env, audioArrayBuffer } from "./env";
+
 // Image
 import { generateImage } from "@tanstack/ai";
 import { createWorkersAiImage } from "@cloudflare/tanstack-ai";

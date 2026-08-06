@@ -103,6 +103,11 @@ API: [create transcription](https://soniox.com/docs/stt/api-reference/transcript
 ## Context
 
 ```typescript
+import { generateTranscription } from "@tanstack/ai";
+import { sonioxTranscription } from "@soniox/tanstack-ai-adapter";
+
+const audio = new ArrayBuffer(0);
+
 const result = await generateTranscription({
   adapter: sonioxTranscription("stt-async-v3"),
   audio,
@@ -125,15 +130,28 @@ Details: [Soniox context](https://soniox.com/docs/stt/concepts/context).
 ## Translation
 
 ```typescript
+import { generateTranscription } from "@tanstack/ai";
+import { sonioxTranscription } from "@soniox/tanstack-ai-adapter";
+
+const audio = new ArrayBuffer(0);
+
 // one-way
-modelOptions: {
-  translation: { type: "one_way", targetLanguage: "es" },
-}
+await generateTranscription({
+  adapter: sonioxTranscription("stt-async-v3"),
+  audio,
+  modelOptions: {
+    translation: { type: "one_way", targetLanguage: "es" },
+  },
+});
 
 // two-way
-modelOptions: {
-  translation: { type: "two_way", languageA: "en", languageB: "es" },
-}
+await generateTranscription({
+  adapter: sonioxTranscription("stt-async-v3"),
+  audio,
+  modelOptions: {
+    translation: { type: "two_way", languageA: "en", languageB: "es" },
+  },
+});
 ```
 
 `segments` are transcription tokens only. Translation tokens live on runtime `providerMetadata` (non-standard field — see package docs / filter `translation_status === "translation"`).

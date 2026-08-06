@@ -21,8 +21,8 @@ If built-in adapters don't fit → implement `recall` + `save`. Contract overvie
 ## Contract
 
 ```ts
+// Shape of the contract (import the real type from `@tanstack/ai-memory`).
 import type {
-  MemoryAdapter,
   MemoryFact,
   MemoryScope,
   MemorySnapshot,

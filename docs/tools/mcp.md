@@ -223,7 +223,7 @@ CLI → per-server interfaces → generic on `createMCPClient`. Tool **names** n
 
 ## Multi-server pool
 
-```ts
+```ts group=mcp-1
 import { createMCPClients } from '@tanstack/ai-mcp'
 
 const pool = await createMCPClients({
@@ -239,14 +239,16 @@ const tools = await pool.tools()
 
 **Per-server:**
 
-```ts
+```ts group=mcp-1
 const linearTools = await pool.clients.linear!.tools()
 const resources = await pool.clients.github!.resources()
 ```
 
 **Prefix override:**
 
-```ts
+```ts group=mcp-2
+import { createMCPClients } from '@tanstack/ai-mcp'
+
 const pool = await createMCPClients({
   github: {
     transport: { type: 'http', url: process.env.GITHUB_MCP_URL! },
@@ -297,8 +299,8 @@ In-scope consumption (`for await` then exit) → `try/finally` or `await using` 
 
 ## Tool name collisions
 
-```ts
-import { createMCPClients, DuplicateToolNameError } from '@tanstack/ai-mcp'
+```ts group=mcp-2
+import { DuplicateToolNameError } from '@tanstack/ai-mcp'
 
 try {
   const tools = await pool.tools()
@@ -314,7 +316,16 @@ Fix: unique `prefix` (default on `createMCPClients` config keys).
 ## Lazy discovery
 
 ```ts
+import { createMCPClient, createMCPClients } from '@tanstack/ai-mcp'
+
+const mcp = await createMCPClient({
+  transport: { type: 'http', url: 'https://my-mcp-server.example.com/mcp' },
+})
 const tools = await mcp.tools({ lazy: true })
+
+const pool = await createMCPClients({
+  github: { transport: { type: 'http', url: process.env.GITHUB_MCP_URL! } },
+})
 // also: await pool.tools({ lazy: true })
 ```
 

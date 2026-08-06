@@ -411,16 +411,18 @@ import {
 } from '@tanstack/ai'
 import { openaiText } from '@tanstack/ai-openai'
 
-const abortController = new AbortController()
-const messages = [{ role: 'user' as const, content: 'Hello' }]
-const stream = chat({ adapter: openaiText('gpt-4o'), messages })
+export async function POST() {
+  const abortController = new AbortController()
+  const messages = [{ role: 'user' as const, content: 'Hello' }]
+  const stream = chat({ adapter: openaiText('gpt-4o'), messages })
 
-return toServerSentEventsResponse(stream, {
-  abortController,
-  headers: { 'X-Trace-Id': 'trace-123' },
-})
-// or toHttpResponse(stream, { abortController }) for NDJSON
-// raw: toServerSentEventsStream / toHttpStream
+  return toServerSentEventsResponse(stream, {
+    abortController,
+    headers: { 'X-Trace-Id': 'trace-123' },
+  })
+  // or toHttpResponse(stream, { abortController }) for NDJSON
+  // raw: toServerSentEventsStream / toHttpStream
+}
 ```
 
 Client: `fetchServerSentEvents` | `fetchHttpStream` | `stream(customIterable)`.
@@ -428,6 +430,15 @@ Client: `fetchServerSentEvents` | `fetchHttpStream` | `stream(customIterable)`.
 ## Abort + multimodal + dynamic provider
 
 ```typescript
+import { chat } from '@tanstack/ai'
+import { openaiText } from '@tanstack/ai-openai'
+import { anthropicText } from '@tanstack/ai-anthropic'
+
+const messages = [{ role: 'user' as const, content: 'Hello' }]
+const imageUrl = 'https://example.com/photo.jpg'
+const imageData = 'base64...'
+const selectedProvider = 'openai' as const
+
 // AbortController (not bare signal)
 const abortController = new AbortController()
 chat({ adapter: openaiText('gpt-4o'), messages, abortController })
@@ -478,6 +489,9 @@ type ChatMessages = InferChatMessages<typeof chatOptions>
 ## Non-streaming
 
 ```typescript
+import { chat } from '@tanstack/ai'
+import { openaiText } from '@tanstack/ai-openai'
+
 const text = await chat({
   adapter: openaiText('gpt-4o'),
   messages: [{ role: 'user', content: 'Summarize TanStack AI in one sentence.' }],

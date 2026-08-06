@@ -84,6 +84,8 @@ Unknown store names fail at type-check and at runtime (untyped JS).
 Partial backend without compose:
 
 ```ts
+import { defineAIPersistence } from '@tanstack/ai-persistence'
+
 defineAIPersistence({ stores: { /* only what you have */ } })
 ```
 

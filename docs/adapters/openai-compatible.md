@@ -111,7 +111,14 @@ const provider = openaiCompatible({
 Default is Chat Completions. Opt in:
 
 ```typescript
-api: "responses", // default: "chat-completions"
+import { openaiCompatible } from "@tanstack/ai-openai/compatible";
+
+const provider = openaiCompatible({
+  baseURL: "https://my-resource.openai.azure.com/openai/v1",
+  apiKey: process.env.AZURE_OPENAI_API_KEY!,
+  models: ["gpt-4o"],
+  api: "responses", // default: "chat-completions"
+});
 ```
 
 ## Providers (verify baseURL/models in their docs)

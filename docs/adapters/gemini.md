@@ -242,17 +242,24 @@ Full example: [`examples/ts-react-chat`](https://github.com/TanStack/ai/tree/mai
 | Stability | GA | Experimental |
 
 ```typescript
-modelOptions: {
-  previous_interaction_id: "int_abc123",
-  store: true,
-  system_instruction: "You are a helpful assistant.",
-  generation_config: {
-    thinking_level: "low",
-    thinking_summaries: "auto",
-    stop_sequences: ["<done>"],
+import { chat } from "@tanstack/ai";
+import { geminiTextInteractions } from "@tanstack/ai-gemini/experimental";
+
+const stream = chat({
+  adapter: geminiTextInteractions("gemini-3.5-flash"),
+  messages: [{ role: "user", content: "Hello!" }],
+  modelOptions: {
+    previous_interaction_id: "int_abc123",
+    store: true,
+    system_instruction: "You are a helpful assistant.",
+    generation_config: {
+      thinking_level: "low",
+      thinking_summaries: "auto",
+      stop_sequences: ["<done>"],
+    },
+    response_modalities: ["text"],
   },
-  response_modalities: ["text"],
-}
+});
 ```
 
 **Notes:** Retention ~55 days paid / 1 day free. `google_search_retrieval`, `google_maps`, `mcp_server` throw here — use `geminiText()`. Text-only for now.
@@ -307,8 +314,23 @@ const result = await generateImage({
   numberOfImages: 1,
   modelOptions: {
     aspectRatio: "16:9",
-    personGeneration: "DONT_ALLOW",
-    safetyFilterLevel: "BLOCK_SOME",
+  },
+});
+```
+
+Person/safety filters use SDK enums (not plain strings):
+
+```typescript ignore
+import { generateImage } from "@tanstack/ai";
+import { geminiImage } from "@tanstack/ai-gemini";
+
+const result = await generateImage({
+  adapter: geminiImage("imagen-4.0-generate-001"),
+  prompt: "...",
+  modelOptions: {
+    aspectRatio: "16:9",
+    personGeneration: "DONT_ALLOW", // PersonGeneration enum
+    safetyFilterLevel: "BLOCK_SOME", // SafetyFilterLevel enum
   },
 });
 ```
