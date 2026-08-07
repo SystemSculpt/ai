@@ -16,7 +16,9 @@ keywords:
 
 If you need OTel traces/metrics on `chat()` (and media activities) → install `@opentelemetry/api`, create a tracer/meter, pass `otelMiddleware`.
 
-Spans follow [GenAI semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/). Import from `@tanstack/ai/middlewares/otel` so the main package never requires OTel.
+Every `chat()` call → root span + one child per provider model call (agent-loop turn **or** structured-output finalization) + one grandchild per tool call. Spans follow [GenAI semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/). Optional `Meter` → GenAI token/duration histograms. Import from `@tanstack/ai/middlewares/otel` so the main package never requires OTel.
+
+**Structured output, no tools:** skips the agent loop; finalization still opens an iteration span (`structuredOutput` phase) so PostHog-style generation backends and `captureContent` work. Native combined mode (`supportsCombinedToolsAndSchema`) does **not** fire that phase — the single `beforeModel` span covers the combined call.
 
 ## Setup
 
@@ -55,7 +57,7 @@ chat gpt-5.5              (root, kind: INTERNAL)
 └── chat gpt-5.5 #1       (iteration, kind: CLIENT)
 ```
 
-Iterations are numbered (`#0`, `#1`, …).
+Iteration spans are numbered (`#0`, `#1`, …) in the order model calls are observed (provider round-trips, not only agent-loop turns).
 
 ### Attributes (selected)
 
