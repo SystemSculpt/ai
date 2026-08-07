@@ -744,6 +744,48 @@ const GEMINI_OMNI_FLASH_PREVIEW = {
     GeminiCachedContentOptions
 >
 
+const GEMINI_3_6_FLASH = {
+  name: 'gemini-3.6-flash',
+  max_input_tokens: 1_048_576,
+  max_output_tokens: 65_536,
+  knowledge_cutoff: '2026-03-01',
+  supports: {
+    input: ['text', 'image', 'video', 'audio', 'document'],
+    output: ['text'],
+    capabilities: [
+      'batch_api',
+      'caching',
+      'function_calling',
+      'structured_output',
+      'thinking',
+    ],
+    tools: [
+      'code_execution',
+      'file_search',
+      'google_search',
+      'google_maps',
+      'url_context',
+      'computer_use',
+    ],
+  },
+  pricing: {
+    input: {
+      normal: 1.5,
+      cached: 0.15,
+    },
+    output: {
+      normal: 7.5,
+    },
+  },
+} as const satisfies ModelMeta<
+  GeminiToolConfigOptions &
+    GeminiSafetyOptions &
+    GeminiCommonConfigOptions &
+    GeminiCachedContentOptions &
+    GeminiStructuredOutputOptions &
+    GeminiThinkingOptions
+>
+
 const GEMINI_3_5_FLASH = {
   name: 'gemini-3.5-flash',
   max_input_tokens: 1_048_576,
@@ -758,7 +800,14 @@ const GEMINI_3_5_FLASH = {
       'structured_output',
       'thinking',
     ],
-    tools: ['code_execution', 'file_search', 'google_search', 'url_context'],
+    tools: [
+      'code_execution',
+      'file_search',
+      'google_search',
+      'google_maps',
+      'url_context',
+      'computer_use',
+    ],
   },
   pricing: {
     input: {
@@ -778,8 +827,51 @@ const GEMINI_3_5_FLASH = {
     GeminiThinkingOptions
 >
 
+const GEMINI_3_5_FLASH_LITE = {
+  name: 'gemini-3.5-flash-lite',
+  max_input_tokens: 1_048_576,
+  max_output_tokens: 65_536,
+  knowledge_cutoff: '2025-01-01',
+  supports: {
+    input: ['text', 'image', 'video', 'audio', 'document'],
+    output: ['text'],
+    capabilities: [
+      'batch_api',
+      'caching',
+      'function_calling',
+      'structured_output',
+      'thinking',
+    ],
+    tools: [
+      'code_execution',
+      'file_search',
+      'google_search',
+      'google_maps',
+      'url_context',
+    ],
+  },
+  pricing: {
+    input: {
+      normal: 0.3,
+      cached: 0.03,
+    },
+    output: {
+      normal: 2.5,
+    },
+  },
+} as const satisfies ModelMeta<
+  GeminiToolConfigOptions &
+    GeminiSafetyOptions &
+    GeminiCommonConfigOptions &
+    GeminiCachedContentOptions &
+    GeminiStructuredOutputOptions &
+    GeminiThinkingOptions
+>
+
 export const GEMINI_MODELS = [
+  GEMINI_3_6_FLASH.name,
   GEMINI_3_5_FLASH.name,
+  GEMINI_3_5_FLASH_LITE.name,
   GEMINI_3_1_PRO.name,
   GEMINI_3_FLASH.name,
   GEMINI_3_1_FLASH_LITE.name,
@@ -797,11 +889,13 @@ export const GEMINI_MODELS = [
  * brittle and keeps the engine's legacy finalization fallback.
  */
 export const GEMINI_COMBINED_TOOLS_AND_SCHEMA_MODELS = new Set<string>([
+  GEMINI_3_6_FLASH.name,
+  GEMINI_3_5_FLASH.name,
+  GEMINI_3_5_FLASH_LITE.name,
   GEMINI_3_1_PRO.name,
   GEMINI_3_FLASH.name,
   GEMINI_3_1_FLASH_LITE.name,
   GEMINI_3_1_FLASH_LITE_PREVIEW.name,
-  GEMINI_3_5_FLASH.name,
 ])
 
 export type GeminiModels = (typeof GEMINI_MODELS)[number]
@@ -923,6 +1017,24 @@ export type GeminiEmbeddingModelInputModalitiesByName = {
 // Manual type map for per-model provider options
 export type GeminiChatModelProviderOptionsByName = {
   // Models with thinking and structured output support
+  [GEMINI_3_6_FLASH.name]: GeminiToolConfigOptions &
+    GeminiSafetyOptions &
+    GeminiCommonConfigOptions &
+    GeminiCachedContentOptions &
+    GeminiStructuredOutputOptions &
+    GeminiThinkingOptions
+  [GEMINI_3_5_FLASH.name]: GeminiToolConfigOptions &
+    GeminiSafetyOptions &
+    GeminiCommonConfigOptions &
+    GeminiCachedContentOptions &
+    GeminiStructuredOutputOptions &
+    GeminiThinkingOptions
+  [GEMINI_3_5_FLASH_LITE.name]: GeminiToolConfigOptions &
+    GeminiSafetyOptions &
+    GeminiCommonConfigOptions &
+    GeminiCachedContentOptions &
+    GeminiStructuredOutputOptions &
+    GeminiThinkingOptions
   [GEMINI_3_1_PRO.name]: GeminiToolConfigOptions &
     GeminiSafetyOptions &
     GeminiCommonConfigOptions &
@@ -965,12 +1077,6 @@ export type GeminiChatModelProviderOptionsByName = {
     GeminiCachedContentOptions &
     GeminiStructuredOutputOptions &
     GeminiThinkingOptions
-  [GEMINI_3_5_FLASH.name]: GeminiToolConfigOptions &
-    GeminiSafetyOptions &
-    GeminiCommonConfigOptions &
-    GeminiCachedContentOptions &
-    GeminiStructuredOutputOptions &
-    GeminiThinkingOptions
 }
 
 /**
@@ -978,6 +1084,9 @@ export type GeminiChatModelProviderOptionsByName = {
  * Based on the 'supports.tools' arrays defined for each model.
  */
 export type GeminiChatModelToolCapabilitiesByName = {
+  [GEMINI_3_6_FLASH.name]: typeof GEMINI_3_6_FLASH.supports.tools
+  [GEMINI_3_5_FLASH.name]: typeof GEMINI_3_5_FLASH.supports.tools
+  [GEMINI_3_5_FLASH_LITE.name]: typeof GEMINI_3_5_FLASH_LITE.supports.tools
   [GEMINI_3_1_PRO.name]: typeof GEMINI_3_1_PRO.supports.tools
   [GEMINI_3_FLASH.name]: typeof GEMINI_3_FLASH.supports.tools
   [GEMINI_3_1_FLASH_LITE.name]: typeof GEMINI_3_1_FLASH_LITE.supports.tools
@@ -985,7 +1094,6 @@ export type GeminiChatModelToolCapabilitiesByName = {
   [GEMINI_2_5_PRO.name]: typeof GEMINI_2_5_PRO.supports.tools
   [GEMINI_2_5_FLASH.name]: typeof GEMINI_2_5_FLASH.supports.tools
   [GEMINI_2_5_FLASH_LITE.name]: typeof GEMINI_2_5_FLASH_LITE.supports.tools
-  [GEMINI_3_5_FLASH.name]: typeof GEMINI_3_5_FLASH.supports.tools
 }
 
 /**
@@ -1003,13 +1111,15 @@ export type GeminiChatModelToolCapabilitiesByName = {
  */
 export type GeminiModelInputModalitiesByName = {
   // Models with full multimodal support (text, image, audio, video, document)
+  [GEMINI_3_6_FLASH.name]: typeof GEMINI_3_6_FLASH.supports.input
+  [GEMINI_3_5_FLASH.name]: typeof GEMINI_3_5_FLASH.supports.input
+  [GEMINI_3_5_FLASH_LITE.name]: typeof GEMINI_3_5_FLASH_LITE.supports.input
   [GEMINI_3_1_PRO.name]: typeof GEMINI_3_1_PRO.supports.input
   [GEMINI_3_FLASH.name]: typeof GEMINI_3_FLASH.supports.input
   [GEMINI_3_1_FLASH_LITE.name]: typeof GEMINI_3_1_FLASH_LITE.supports.input
   [GEMINI_3_1_FLASH_LITE_PREVIEW.name]: typeof GEMINI_3_1_FLASH_LITE_PREVIEW.supports.input
   [GEMINI_2_5_PRO.name]: typeof GEMINI_2_5_PRO.supports.input
   [GEMINI_2_5_FLASH_LITE.name]: typeof GEMINI_2_5_FLASH_LITE.supports.input
-  [GEMINI_3_5_FLASH.name]: typeof GEMINI_3_5_FLASH.supports.input
 
   // Models with text, image, audio, video (no document)
   [GEMINI_2_5_FLASH.name]: typeof GEMINI_2_5_FLASH.supports.input

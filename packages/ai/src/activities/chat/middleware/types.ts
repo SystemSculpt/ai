@@ -1,4 +1,5 @@
 import type {
+  AgentLoopState,
   JSONSchema,
   ModelMessage,
   RunAgentResumeItem,
@@ -398,6 +399,22 @@ export interface AbortInfo {
   reason?: string
   /** Duration until abort in milliseconds */
   duration: number
+  /**
+   * True only when the abort came from an explicit, out-of-band cancel (e.g. a
+   * cancel endpoint setting `RunRecord.cancelRequested`), never from a mere
+   * client disconnect.
+   *
+   * A disconnect and a user pressing "stop" are the SAME connection close on
+   * the wire, so consumers must not infer intent from an abort alone. Middleware
+   * that tears down expensive resources reads this to distinguish "the viewer
+   * left, keep going" from "the user wants this stopped". Populated from the
+   * abort reason: `true` exactly when the run was aborted with `RUN_CANCEL_REASON`
+   * (matched with `===`, so an arbitrary error message can never be read as a
+   * deliberate cancel), `false` for every other abort. The durable channel is
+   * separate — middleware that must also catch a cancel recorded on a different
+   * host reads `RunRecord.cancelRequested` in addition to this flag.
+   */
+  cancelRequested?: boolean
 }
 
 /**
@@ -530,6 +547,25 @@ export interface ChatMiddleware<TContext = unknown> {
     ctx: ChatMiddlewareContext<TContext>,
     info: IterationInfo,
   ) => void | Promise<void>
+
+  /**
+   * Called when the engine is deciding whether to start another agent-loop
+   * iteration (after a tool phase or between model turns).
+   *
+   * Return `false` to stop further iterations. Return `true`, `void`, or
+   * `undefined` to allow continuation. Combined with AND semantics across
+   * middleware and with `agentLoopStrategy` — any `false` stops the loop.
+   *
+   * Does not abort the run: the stream finishes normally with the current
+   * messages. Use `ctx.abort()` only when you need a hard abort.
+   *
+   * Receives the same {@link AgentLoopState} passed to strategies
+   * (`iterationCount`, `toolCallCount`, `lastTurnToolCallCount`, etc.).
+   */
+  onShouldContinue?: (
+    ctx: ChatMiddlewareContext<TContext>,
+    state: AgentLoopState,
+  ) => boolean | void | Promise<boolean | void>
 
   /**
    * Called for every chunk yielded by chat().

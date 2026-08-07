@@ -10,9 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ToolsTestRouteImport } from './routes/tools-test'
+import { Route as PersistenceDurabilityRouteImport } from './routes/persistence-durability'
 import { Route as MiddlewareTestRouteImport } from './routes/middleware-test'
 import { Route as MarkdownCjkRouteImport } from './routes/markdown-cjk'
 import { Route as InterruptsTestRouteImport } from './routes/interrupts-test'
+import { Route as GenerationPersistenceServerRouteImport } from './routes/generation-persistence-server'
+import { Route as GenerationPersistenceResumeRouteImport } from './routes/generation-persistence-resume'
 import { Route as ForeignInterruptRouteImport } from './routes/foreign-interrupt'
 import { Route as DevtoolsToolsRouteImport } from './routes/devtools-tools'
 import { Route as DevtoolsStructuredRouteImport } from './routes/devtools-structured'
@@ -30,6 +33,9 @@ import { Route as ApiTranscriptionRouteImport } from './routes/api.transcription
 import { Route as ApiToolsTestRouteImport } from './routes/api.tools-test'
 import { Route as ApiToolCallLifecycleWireRouteImport } from './routes/api.tool-call-lifecycle-wire'
 import { Route as ApiSummarizeRouteImport } from './routes/api.summarize'
+import { Route as ApiSandboxToolHistoryRouteImport } from './routes/api.sandbox-tool-history'
+import { Route as ApiSandboxDurabilityRouteImport } from './routes/api.sandbox-durability'
+import { Route as ApiPersistenceDurabilityRouteImport } from './routes/api.persistence-durability'
 import { Route as ApiOtelUsageRouteImport } from './routes/api.otel-usage'
 import { Route as ApiOtelMediaRouteImport } from './routes/api.otel-media'
 import { Route as ApiOpenrouterWebToolsWireRouteImport } from './routes/api.openrouter-web-tools-wire'
@@ -50,8 +56,11 @@ import { Route as ApiMaxToolCallsWireRouteImport } from './routes/api.max-tool-c
 import { Route as ApiLazyToolsWireRouteImport } from './routes/api.lazy-tools-wire'
 import { Route as ApiInterruptsTestRouteImport } from './routes/api.interrupts-test'
 import { Route as ApiImageRouteImport } from './routes/api.image'
+import { Route as ApiGenerationPersistenceServerRouteImport } from './routes/api.generation-persistence-server'
+import { Route as ApiGenerationPersistenceResumeRouteImport } from './routes/api.generation-persistence-resume'
 import { Route as ApiForeignInterruptRouteImport } from './routes/api.foreign-interrupt'
 import { Route as ApiEmbeddingRouteImport } from './routes/api.embedding'
+import { Route as ApiDurableTakeoverRouteImport } from './routes/api.durable-takeover'
 import { Route as ApiDurableDeliveryRouteImport } from './routes/api.durable-delivery'
 import { Route as ApiDevtoolsMemoryRouteImport } from './routes/api.devtools-memory'
 import { Route as ApiChatRouteImport } from './routes/api.chat'
@@ -72,6 +81,11 @@ const ToolsTestRoute = ToolsTestRouteImport.update({
   path: '/tools-test',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PersistenceDurabilityRoute = PersistenceDurabilityRouteImport.update({
+  id: '/persistence-durability',
+  path: '/persistence-durability',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MiddlewareTestRoute = MiddlewareTestRouteImport.update({
   id: '/middleware-test',
   path: '/middleware-test',
@@ -87,6 +101,18 @@ const InterruptsTestRoute = InterruptsTestRouteImport.update({
   path: '/interrupts-test',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GenerationPersistenceServerRoute =
+  GenerationPersistenceServerRouteImport.update({
+    id: '/generation-persistence-server',
+    path: '/generation-persistence-server',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const GenerationPersistenceResumeRoute =
+  GenerationPersistenceResumeRouteImport.update({
+    id: '/generation-persistence-resume',
+    path: '/generation-persistence-resume',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ForeignInterruptRoute = ForeignInterruptRouteImport.update({
   id: '/foreign-interrupt',
   path: '/foreign-interrupt',
@@ -173,6 +199,22 @@ const ApiSummarizeRoute = ApiSummarizeRouteImport.update({
   path: '/api/summarize',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSandboxToolHistoryRoute = ApiSandboxToolHistoryRouteImport.update({
+  id: '/api/sandbox-tool-history',
+  path: '/api/sandbox-tool-history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSandboxDurabilityRoute = ApiSandboxDurabilityRouteImport.update({
+  id: '/api/sandbox-durability',
+  path: '/api/sandbox-durability',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPersistenceDurabilityRoute =
+  ApiPersistenceDurabilityRouteImport.update({
+    id: '/api/persistence-durability',
+    path: '/api/persistence-durability',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiOtelUsageRoute = ApiOtelUsageRouteImport.update({
   id: '/api/otel-usage',
   path: '/api/otel-usage',
@@ -276,6 +318,18 @@ const ApiImageRoute = ApiImageRouteImport.update({
   path: '/api/image',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGenerationPersistenceServerRoute =
+  ApiGenerationPersistenceServerRouteImport.update({
+    id: '/api/generation-persistence-server',
+    path: '/api/generation-persistence-server',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiGenerationPersistenceResumeRoute =
+  ApiGenerationPersistenceResumeRouteImport.update({
+    id: '/api/generation-persistence-resume',
+    path: '/api/generation-persistence-resume',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiForeignInterruptRoute = ApiForeignInterruptRouteImport.update({
   id: '/api/foreign-interrupt',
   path: '/api/foreign-interrupt',
@@ -284,6 +338,11 @@ const ApiForeignInterruptRoute = ApiForeignInterruptRouteImport.update({
 const ApiEmbeddingRoute = ApiEmbeddingRouteImport.update({
   id: '/api/embedding',
   path: '/api/embedding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDurableTakeoverRoute = ApiDurableTakeoverRouteImport.update({
+  id: '/api/durable-takeover',
+  path: '/api/durable-takeover',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiDurableDeliveryRoute = ApiDurableDeliveryRouteImport.update({
@@ -369,9 +428,12 @@ export interface FileRoutesByFullPath {
   '/devtools-structured': typeof DevtoolsStructuredRoute
   '/devtools-tools': typeof DevtoolsToolsRoute
   '/foreign-interrupt': typeof ForeignInterruptRoute
+  '/generation-persistence-resume': typeof GenerationPersistenceResumeRoute
+  '/generation-persistence-server': typeof GenerationPersistenceServerRoute
   '/interrupts-test': typeof InterruptsTestRoute
   '/markdown-cjk': typeof MarkdownCjkRoute
   '/middleware-test': typeof MiddlewareTestRoute
+  '/persistence-durability': typeof PersistenceDurabilityRoute
   '/tools-test': typeof ToolsTestRoute
   '/$provider/$feature': typeof ProviderFeatureRoute
   '/api/anthropic-bug-test': typeof ApiAnthropicBugTestRoute
@@ -382,8 +444,11 @@ export interface FileRoutesByFullPath {
   '/api/chat': typeof ApiChatRoute
   '/api/devtools-memory': typeof ApiDevtoolsMemoryRoute
   '/api/durable-delivery': typeof ApiDurableDeliveryRoute
+  '/api/durable-takeover': typeof ApiDurableTakeoverRoute
   '/api/embedding': typeof ApiEmbeddingRoute
   '/api/foreign-interrupt': typeof ApiForeignInterruptRoute
+  '/api/generation-persistence-resume': typeof ApiGenerationPersistenceResumeRoute
+  '/api/generation-persistence-server': typeof ApiGenerationPersistenceServerRoute
   '/api/image': typeof ApiImageRouteWithChildren
   '/api/interrupts-test': typeof ApiInterruptsTestRoute
   '/api/lazy-tools-wire': typeof ApiLazyToolsWireRoute
@@ -404,6 +469,9 @@ export interface FileRoutesByFullPath {
   '/api/openrouter-web-tools-wire': typeof ApiOpenrouterWebToolsWireRoute
   '/api/otel-media': typeof ApiOtelMediaRoute
   '/api/otel-usage': typeof ApiOtelUsageRoute
+  '/api/persistence-durability': typeof ApiPersistenceDurabilityRoute
+  '/api/sandbox-durability': typeof ApiSandboxDurabilityRoute
+  '/api/sandbox-tool-history': typeof ApiSandboxToolHistoryRoute
   '/api/summarize': typeof ApiSummarizeRoute
   '/api/tool-call-lifecycle-wire': typeof ApiToolCallLifecycleWireRoute
   '/api/tools-test': typeof ApiToolsTestRoute
@@ -428,9 +496,12 @@ export interface FileRoutesByTo {
   '/devtools-structured': typeof DevtoolsStructuredRoute
   '/devtools-tools': typeof DevtoolsToolsRoute
   '/foreign-interrupt': typeof ForeignInterruptRoute
+  '/generation-persistence-resume': typeof GenerationPersistenceResumeRoute
+  '/generation-persistence-server': typeof GenerationPersistenceServerRoute
   '/interrupts-test': typeof InterruptsTestRoute
   '/markdown-cjk': typeof MarkdownCjkRoute
   '/middleware-test': typeof MiddlewareTestRoute
+  '/persistence-durability': typeof PersistenceDurabilityRoute
   '/tools-test': typeof ToolsTestRoute
   '/$provider/$feature': typeof ProviderFeatureRoute
   '/api/anthropic-bug-test': typeof ApiAnthropicBugTestRoute
@@ -441,8 +512,11 @@ export interface FileRoutesByTo {
   '/api/chat': typeof ApiChatRoute
   '/api/devtools-memory': typeof ApiDevtoolsMemoryRoute
   '/api/durable-delivery': typeof ApiDurableDeliveryRoute
+  '/api/durable-takeover': typeof ApiDurableTakeoverRoute
   '/api/embedding': typeof ApiEmbeddingRoute
   '/api/foreign-interrupt': typeof ApiForeignInterruptRoute
+  '/api/generation-persistence-resume': typeof ApiGenerationPersistenceResumeRoute
+  '/api/generation-persistence-server': typeof ApiGenerationPersistenceServerRoute
   '/api/image': typeof ApiImageRouteWithChildren
   '/api/interrupts-test': typeof ApiInterruptsTestRoute
   '/api/lazy-tools-wire': typeof ApiLazyToolsWireRoute
@@ -463,6 +537,9 @@ export interface FileRoutesByTo {
   '/api/openrouter-web-tools-wire': typeof ApiOpenrouterWebToolsWireRoute
   '/api/otel-media': typeof ApiOtelMediaRoute
   '/api/otel-usage': typeof ApiOtelUsageRoute
+  '/api/persistence-durability': typeof ApiPersistenceDurabilityRoute
+  '/api/sandbox-durability': typeof ApiSandboxDurabilityRoute
+  '/api/sandbox-tool-history': typeof ApiSandboxToolHistoryRoute
   '/api/summarize': typeof ApiSummarizeRoute
   '/api/tool-call-lifecycle-wire': typeof ApiToolCallLifecycleWireRoute
   '/api/tools-test': typeof ApiToolsTestRoute
@@ -488,9 +565,12 @@ export interface FileRoutesById {
   '/devtools-structured': typeof DevtoolsStructuredRoute
   '/devtools-tools': typeof DevtoolsToolsRoute
   '/foreign-interrupt': typeof ForeignInterruptRoute
+  '/generation-persistence-resume': typeof GenerationPersistenceResumeRoute
+  '/generation-persistence-server': typeof GenerationPersistenceServerRoute
   '/interrupts-test': typeof InterruptsTestRoute
   '/markdown-cjk': typeof MarkdownCjkRoute
   '/middleware-test': typeof MiddlewareTestRoute
+  '/persistence-durability': typeof PersistenceDurabilityRoute
   '/tools-test': typeof ToolsTestRoute
   '/$provider/$feature': typeof ProviderFeatureRoute
   '/api/anthropic-bug-test': typeof ApiAnthropicBugTestRoute
@@ -501,8 +581,11 @@ export interface FileRoutesById {
   '/api/chat': typeof ApiChatRoute
   '/api/devtools-memory': typeof ApiDevtoolsMemoryRoute
   '/api/durable-delivery': typeof ApiDurableDeliveryRoute
+  '/api/durable-takeover': typeof ApiDurableTakeoverRoute
   '/api/embedding': typeof ApiEmbeddingRoute
   '/api/foreign-interrupt': typeof ApiForeignInterruptRoute
+  '/api/generation-persistence-resume': typeof ApiGenerationPersistenceResumeRoute
+  '/api/generation-persistence-server': typeof ApiGenerationPersistenceServerRoute
   '/api/image': typeof ApiImageRouteWithChildren
   '/api/interrupts-test': typeof ApiInterruptsTestRoute
   '/api/lazy-tools-wire': typeof ApiLazyToolsWireRoute
@@ -523,6 +606,9 @@ export interface FileRoutesById {
   '/api/openrouter-web-tools-wire': typeof ApiOpenrouterWebToolsWireRoute
   '/api/otel-media': typeof ApiOtelMediaRoute
   '/api/otel-usage': typeof ApiOtelUsageRoute
+  '/api/persistence-durability': typeof ApiPersistenceDurabilityRoute
+  '/api/sandbox-durability': typeof ApiSandboxDurabilityRoute
+  '/api/sandbox-tool-history': typeof ApiSandboxToolHistoryRoute
   '/api/summarize': typeof ApiSummarizeRoute
   '/api/tool-call-lifecycle-wire': typeof ApiToolCallLifecycleWireRoute
   '/api/tools-test': typeof ApiToolsTestRoute
@@ -549,9 +635,12 @@ export interface FileRouteTypes {
     | '/devtools-structured'
     | '/devtools-tools'
     | '/foreign-interrupt'
+    | '/generation-persistence-resume'
+    | '/generation-persistence-server'
     | '/interrupts-test'
     | '/markdown-cjk'
     | '/middleware-test'
+    | '/persistence-durability'
     | '/tools-test'
     | '/$provider/$feature'
     | '/api/anthropic-bug-test'
@@ -562,8 +651,11 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/devtools-memory'
     | '/api/durable-delivery'
+    | '/api/durable-takeover'
     | '/api/embedding'
     | '/api/foreign-interrupt'
+    | '/api/generation-persistence-resume'
+    | '/api/generation-persistence-server'
     | '/api/image'
     | '/api/interrupts-test'
     | '/api/lazy-tools-wire'
@@ -584,6 +676,9 @@ export interface FileRouteTypes {
     | '/api/openrouter-web-tools-wire'
     | '/api/otel-media'
     | '/api/otel-usage'
+    | '/api/persistence-durability'
+    | '/api/sandbox-durability'
+    | '/api/sandbox-tool-history'
     | '/api/summarize'
     | '/api/tool-call-lifecycle-wire'
     | '/api/tools-test'
@@ -608,9 +703,12 @@ export interface FileRouteTypes {
     | '/devtools-structured'
     | '/devtools-tools'
     | '/foreign-interrupt'
+    | '/generation-persistence-resume'
+    | '/generation-persistence-server'
     | '/interrupts-test'
     | '/markdown-cjk'
     | '/middleware-test'
+    | '/persistence-durability'
     | '/tools-test'
     | '/$provider/$feature'
     | '/api/anthropic-bug-test'
@@ -621,8 +719,11 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/devtools-memory'
     | '/api/durable-delivery'
+    | '/api/durable-takeover'
     | '/api/embedding'
     | '/api/foreign-interrupt'
+    | '/api/generation-persistence-resume'
+    | '/api/generation-persistence-server'
     | '/api/image'
     | '/api/interrupts-test'
     | '/api/lazy-tools-wire'
@@ -643,6 +744,9 @@ export interface FileRouteTypes {
     | '/api/openrouter-web-tools-wire'
     | '/api/otel-media'
     | '/api/otel-usage'
+    | '/api/persistence-durability'
+    | '/api/sandbox-durability'
+    | '/api/sandbox-tool-history'
     | '/api/summarize'
     | '/api/tool-call-lifecycle-wire'
     | '/api/tools-test'
@@ -667,9 +771,12 @@ export interface FileRouteTypes {
     | '/devtools-structured'
     | '/devtools-tools'
     | '/foreign-interrupt'
+    | '/generation-persistence-resume'
+    | '/generation-persistence-server'
     | '/interrupts-test'
     | '/markdown-cjk'
     | '/middleware-test'
+    | '/persistence-durability'
     | '/tools-test'
     | '/$provider/$feature'
     | '/api/anthropic-bug-test'
@@ -680,8 +787,11 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/devtools-memory'
     | '/api/durable-delivery'
+    | '/api/durable-takeover'
     | '/api/embedding'
     | '/api/foreign-interrupt'
+    | '/api/generation-persistence-resume'
+    | '/api/generation-persistence-server'
     | '/api/image'
     | '/api/interrupts-test'
     | '/api/lazy-tools-wire'
@@ -702,6 +812,9 @@ export interface FileRouteTypes {
     | '/api/openrouter-web-tools-wire'
     | '/api/otel-media'
     | '/api/otel-usage'
+    | '/api/persistence-durability'
+    | '/api/sandbox-durability'
+    | '/api/sandbox-tool-history'
     | '/api/summarize'
     | '/api/tool-call-lifecycle-wire'
     | '/api/tools-test'
@@ -727,9 +840,12 @@ export interface RootRouteChildren {
   DevtoolsStructuredRoute: typeof DevtoolsStructuredRoute
   DevtoolsToolsRoute: typeof DevtoolsToolsRoute
   ForeignInterruptRoute: typeof ForeignInterruptRoute
+  GenerationPersistenceResumeRoute: typeof GenerationPersistenceResumeRoute
+  GenerationPersistenceServerRoute: typeof GenerationPersistenceServerRoute
   InterruptsTestRoute: typeof InterruptsTestRoute
   MarkdownCjkRoute: typeof MarkdownCjkRoute
   MiddlewareTestRoute: typeof MiddlewareTestRoute
+  PersistenceDurabilityRoute: typeof PersistenceDurabilityRoute
   ToolsTestRoute: typeof ToolsTestRoute
   ProviderFeatureRoute: typeof ProviderFeatureRoute
   ApiAnthropicBugTestRoute: typeof ApiAnthropicBugTestRoute
@@ -740,8 +856,11 @@ export interface RootRouteChildren {
   ApiChatRoute: typeof ApiChatRoute
   ApiDevtoolsMemoryRoute: typeof ApiDevtoolsMemoryRoute
   ApiDurableDeliveryRoute: typeof ApiDurableDeliveryRoute
+  ApiDurableTakeoverRoute: typeof ApiDurableTakeoverRoute
   ApiEmbeddingRoute: typeof ApiEmbeddingRoute
   ApiForeignInterruptRoute: typeof ApiForeignInterruptRoute
+  ApiGenerationPersistenceResumeRoute: typeof ApiGenerationPersistenceResumeRoute
+  ApiGenerationPersistenceServerRoute: typeof ApiGenerationPersistenceServerRoute
   ApiImageRoute: typeof ApiImageRouteWithChildren
   ApiInterruptsTestRoute: typeof ApiInterruptsTestRoute
   ApiLazyToolsWireRoute: typeof ApiLazyToolsWireRoute
@@ -762,6 +881,9 @@ export interface RootRouteChildren {
   ApiOpenrouterWebToolsWireRoute: typeof ApiOpenrouterWebToolsWireRoute
   ApiOtelMediaRoute: typeof ApiOtelMediaRoute
   ApiOtelUsageRoute: typeof ApiOtelUsageRoute
+  ApiPersistenceDurabilityRoute: typeof ApiPersistenceDurabilityRoute
+  ApiSandboxDurabilityRoute: typeof ApiSandboxDurabilityRoute
+  ApiSandboxToolHistoryRoute: typeof ApiSandboxToolHistoryRoute
   ApiSummarizeRoute: typeof ApiSummarizeRoute
   ApiToolCallLifecycleWireRoute: typeof ApiToolCallLifecycleWireRoute
   ApiToolsTestRoute: typeof ApiToolsTestRoute
@@ -778,6 +900,13 @@ declare module '@tanstack/react-router' {
       path: '/tools-test'
       fullPath: '/tools-test'
       preLoaderRoute: typeof ToolsTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/persistence-durability': {
+      id: '/persistence-durability'
+      path: '/persistence-durability'
+      fullPath: '/persistence-durability'
+      preLoaderRoute: typeof PersistenceDurabilityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/middleware-test': {
@@ -799,6 +928,20 @@ declare module '@tanstack/react-router' {
       path: '/interrupts-test'
       fullPath: '/interrupts-test'
       preLoaderRoute: typeof InterruptsTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/generation-persistence-server': {
+      id: '/generation-persistence-server'
+      path: '/generation-persistence-server'
+      fullPath: '/generation-persistence-server'
+      preLoaderRoute: typeof GenerationPersistenceServerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/generation-persistence-resume': {
+      id: '/generation-persistence-resume'
+      path: '/generation-persistence-resume'
+      fullPath: '/generation-persistence-resume'
+      preLoaderRoute: typeof GenerationPersistenceResumeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/foreign-interrupt': {
@@ -918,6 +1061,27 @@ declare module '@tanstack/react-router' {
       path: '/api/summarize'
       fullPath: '/api/summarize'
       preLoaderRoute: typeof ApiSummarizeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/sandbox-tool-history': {
+      id: '/api/sandbox-tool-history'
+      path: '/api/sandbox-tool-history'
+      fullPath: '/api/sandbox-tool-history'
+      preLoaderRoute: typeof ApiSandboxToolHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/sandbox-durability': {
+      id: '/api/sandbox-durability'
+      path: '/api/sandbox-durability'
+      fullPath: '/api/sandbox-durability'
+      preLoaderRoute: typeof ApiSandboxDurabilityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/persistence-durability': {
+      id: '/api/persistence-durability'
+      path: '/api/persistence-durability'
+      fullPath: '/api/persistence-durability'
+      preLoaderRoute: typeof ApiPersistenceDurabilityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/otel-usage': {
@@ -1060,6 +1224,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiImageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/generation-persistence-server': {
+      id: '/api/generation-persistence-server'
+      path: '/api/generation-persistence-server'
+      fullPath: '/api/generation-persistence-server'
+      preLoaderRoute: typeof ApiGenerationPersistenceServerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/generation-persistence-resume': {
+      id: '/api/generation-persistence-resume'
+      path: '/api/generation-persistence-resume'
+      fullPath: '/api/generation-persistence-resume'
+      preLoaderRoute: typeof ApiGenerationPersistenceResumeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/foreign-interrupt': {
       id: '/api/foreign-interrupt'
       path: '/api/foreign-interrupt'
@@ -1072,6 +1250,13 @@ declare module '@tanstack/react-router' {
       path: '/api/embedding'
       fullPath: '/api/embedding'
       preLoaderRoute: typeof ApiEmbeddingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/durable-takeover': {
+      id: '/api/durable-takeover'
+      path: '/api/durable-takeover'
+      fullPath: '/api/durable-takeover'
+      preLoaderRoute: typeof ApiDurableTakeoverRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/durable-delivery': {
@@ -1244,9 +1429,12 @@ const rootRouteChildren: RootRouteChildren = {
   DevtoolsStructuredRoute: DevtoolsStructuredRoute,
   DevtoolsToolsRoute: DevtoolsToolsRoute,
   ForeignInterruptRoute: ForeignInterruptRoute,
+  GenerationPersistenceResumeRoute: GenerationPersistenceResumeRoute,
+  GenerationPersistenceServerRoute: GenerationPersistenceServerRoute,
   InterruptsTestRoute: InterruptsTestRoute,
   MarkdownCjkRoute: MarkdownCjkRoute,
   MiddlewareTestRoute: MiddlewareTestRoute,
+  PersistenceDurabilityRoute: PersistenceDurabilityRoute,
   ToolsTestRoute: ToolsTestRoute,
   ProviderFeatureRoute: ProviderFeatureRoute,
   ApiAnthropicBugTestRoute: ApiAnthropicBugTestRoute,
@@ -1257,8 +1445,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiChatRoute: ApiChatRoute,
   ApiDevtoolsMemoryRoute: ApiDevtoolsMemoryRoute,
   ApiDurableDeliveryRoute: ApiDurableDeliveryRoute,
+  ApiDurableTakeoverRoute: ApiDurableTakeoverRoute,
   ApiEmbeddingRoute: ApiEmbeddingRoute,
   ApiForeignInterruptRoute: ApiForeignInterruptRoute,
+  ApiGenerationPersistenceResumeRoute: ApiGenerationPersistenceResumeRoute,
+  ApiGenerationPersistenceServerRoute: ApiGenerationPersistenceServerRoute,
   ApiImageRoute: ApiImageRouteWithChildren,
   ApiInterruptsTestRoute: ApiInterruptsTestRoute,
   ApiLazyToolsWireRoute: ApiLazyToolsWireRoute,
@@ -1279,6 +1470,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiOpenrouterWebToolsWireRoute: ApiOpenrouterWebToolsWireRoute,
   ApiOtelMediaRoute: ApiOtelMediaRoute,
   ApiOtelUsageRoute: ApiOtelUsageRoute,
+  ApiPersistenceDurabilityRoute: ApiPersistenceDurabilityRoute,
+  ApiSandboxDurabilityRoute: ApiSandboxDurabilityRoute,
+  ApiSandboxToolHistoryRoute: ApiSandboxToolHistoryRoute,
   ApiSummarizeRoute: ApiSummarizeRoute,
   ApiToolCallLifecycleWireRoute: ApiToolCallLifecycleWireRoute,
   ApiToolsTestRoute: ApiToolsTestRoute,

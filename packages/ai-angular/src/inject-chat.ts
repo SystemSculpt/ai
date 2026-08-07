@@ -73,6 +73,7 @@ export function injectChat<
   const connectionStatus = signal<ConnectionStatus>('disconnected')
   const sessionGenerating = signal(false)
   const queue = signal<Array<QueuedMessage>>([])
+  const runId = signal<string | null>(null)
   const interruptState = signal<ChatInterruptState<TTools>>({
     interrupts: EMPTY_INTERRUPTS,
     pendingInterrupts: EMPTY_INTERRUPTS,
@@ -125,9 +126,11 @@ export function injectChat<
     onChunk: (chunk: StreamChunk) => options.onChunk?.(chunk),
     onFinish: (message) => options.onFinish?.(message),
     onError: (err) => options.onError?.(err),
-    onResumeStateChange: (resumeState, pendingInterrupts) => {
-      options.onResumeStateChange?.(resumeState, pendingInterrupts)
-    },
+    onRunIdChange: (nextRunId) => runId.set(nextRunId),
+    // No `onResumeStateChange`: the run identity is surfaced as the `runId`
+    // signal (via `onRunIdChange`) and pending interrupts arrive through
+    // `onInterruptStateChange`, so there is nothing left for it to do — and it
+    // is not a public option here, matching the other framework packages.
     onInterruptStateChange: (nextInterruptState) => {
       interruptState.set(nextInterruptState)
       options.onInterruptStateChange?.(nextInterruptState)
@@ -151,6 +154,14 @@ export function injectChat<
 
   messages.set(client.getMessages())
   interruptState.set(client.getInterruptState())
+
+  // START TAILING HERE, not in the constructor. A client is idle until something
+  // attaches it, so a client that gets built and thrown away never opens a
+  // connection — an unreachable stream would hold one of the browser's ~6
+  // connections per origin until the page reloaded. `inject*` runs in an injection
+  // context tied to the consumer's lifetime, and `destroyRef.onDestroy` below is the
+  // matching `detach`.
+  client.attach()
 
   // Sync reactive body / forwardedProps / context to the client.
   if (bodySource || forwardedPropsSource || contextSource) {
@@ -196,6 +207,8 @@ export function injectChat<
   )
 
   destroyRef.onDestroy(() => {
+    // Release the connection first: the counterpart of the `attach` above.
+    client.detach()
     if (liveSource?.()) {
       client.unsubscribe()
     } else {
@@ -311,6 +324,7 @@ export function injectChat<
     clear,
     addToolResult,
     addToolApprovalResponse,
+    runId: runId.asReadonly(),
     interrupts,
     pendingInterrupts,
     interruptErrors,

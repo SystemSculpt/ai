@@ -614,6 +614,8 @@ export interface SummarizeUsageEvent extends BaseEventContext {
 /** Emitted when an image request starts. */
 export interface ImageRequestStartedEvent extends BaseEventContext {
   requestId: string
+  threadId?: string
+  runId?: string
   provider: string
   model: string
   prompt: string
@@ -630,6 +632,8 @@ export interface ImageRequestStartedEvent extends BaseEventContext {
 /** Emitted when an image request completes. */
 export interface ImageRequestCompletedEvent extends BaseEventContext {
   requestId: string
+  threadId?: string
+  runId?: string
   provider: string
   model: string
   images: Array<{ url?: string; b64Json?: string }>
@@ -639,6 +643,8 @@ export interface ImageRequestCompletedEvent extends BaseEventContext {
 /** Emitted when image usage metrics are available. */
 export interface ImageUsageEvent extends BaseEventContext {
   requestId: string
+  threadId?: string
+  runId?: string
   model: string
   usage: TokenUsage
 }
@@ -702,6 +708,8 @@ export interface EmbeddingUsageEvent extends BaseEventContext {
 /** Emitted when a speech request starts. */
 export interface SpeechRequestStartedEvent extends BaseEventContext {
   requestId: string
+  threadId?: string
+  runId?: string
   provider: string
   model: string
   text: string
@@ -713,6 +721,8 @@ export interface SpeechRequestStartedEvent extends BaseEventContext {
 /** Emitted when a speech request completes. */
 export interface SpeechRequestCompletedEvent extends BaseEventContext {
   requestId: string
+  threadId?: string
+  runId?: string
   provider: string
   model: string
   audio: string
@@ -725,6 +735,8 @@ export interface SpeechRequestCompletedEvent extends BaseEventContext {
 /** Emitted when speech usage metrics are available. */
 export interface SpeechUsageEvent extends BaseEventContext {
   requestId: string
+  threadId?: string
+  runId?: string
   model: string
   usage: TokenUsage
 }
@@ -736,6 +748,8 @@ export interface SpeechUsageEvent extends BaseEventContext {
 /** Emitted when a transcription request starts. */
 export interface TranscriptionRequestStartedEvent extends BaseEventContext {
   requestId: string
+  threadId?: string
+  runId?: string
   provider: string
   model: string
   language?: string
@@ -746,6 +760,8 @@ export interface TranscriptionRequestStartedEvent extends BaseEventContext {
 /** Emitted when a transcription request completes. */
 export interface TranscriptionRequestCompletedEvent extends BaseEventContext {
   requestId: string
+  threadId?: string
+  runId?: string
   provider: string
   model: string
   text: string
@@ -756,6 +772,8 @@ export interface TranscriptionRequestCompletedEvent extends BaseEventContext {
 /** Emitted when transcription usage metrics are available. */
 export interface TranscriptionUsageEvent extends BaseEventContext {
   requestId: string
+  threadId?: string
+  runId?: string
   model: string
   usage: TokenUsage
 }
@@ -767,6 +785,8 @@ export interface TranscriptionUsageEvent extends BaseEventContext {
 /** Emitted when an audio generation request starts. */
 export interface AudioRequestStartedEvent extends BaseEventContext {
   requestId: string
+  threadId?: string
+  runId?: string
   provider: string
   model: string
   prompt: string
@@ -795,6 +815,8 @@ export type AudioRequestCompletedAudio =
 /** Emitted when an audio generation request completes. */
 export interface AudioRequestCompletedEvent extends BaseEventContext {
   requestId: string
+  threadId?: string
+  runId?: string
   provider: string
   model: string
   audio: AudioRequestCompletedAudio
@@ -804,6 +826,8 @@ export interface AudioRequestCompletedEvent extends BaseEventContext {
 /** Emitted when an audio generation request fails. */
 export interface AudioRequestErrorEvent extends BaseEventContext {
   requestId: string
+  threadId?: string
+  runId?: string
   provider: string
   model: string
   error: { message: string; name?: string }
@@ -813,6 +837,8 @@ export interface AudioRequestErrorEvent extends BaseEventContext {
 /** Emitted when a speech generation request fails. */
 export interface SpeechRequestErrorEvent extends BaseEventContext {
   requestId: string
+  threadId?: string
+  runId?: string
   provider: string
   model: string
   error: { message: string; name?: string }
@@ -822,6 +848,8 @@ export interface SpeechRequestErrorEvent extends BaseEventContext {
 /** Emitted when a transcription request fails. */
 export interface TranscriptionRequestErrorEvent extends BaseEventContext {
   requestId: string
+  threadId?: string
+  runId?: string
   provider: string
   model: string
   error: { message: string; name?: string }
@@ -831,6 +859,8 @@ export interface TranscriptionRequestErrorEvent extends BaseEventContext {
 /** Emitted when audio usage metrics are available. */
 export interface AudioUsageEvent extends BaseEventContext {
   requestId: string
+  threadId?: string
+  runId?: string
   model: string
   usage: TokenUsage
 }
@@ -842,6 +872,8 @@ export interface AudioUsageEvent extends BaseEventContext {
 /** Emitted when a video request starts. */
 export interface VideoRequestStartedEvent extends BaseEventContext {
   requestId: string
+  threadId?: string
+  runId?: string
   provider: string
   model: string
   requestType: 'create' | 'status' | 'url'
@@ -854,6 +886,8 @@ export interface VideoRequestStartedEvent extends BaseEventContext {
 /** Emitted when a video request completes. */
 export interface VideoRequestCompletedEvent extends BaseEventContext {
   requestId: string
+  threadId?: string
+  runId?: string
   provider: string
   model: string
   requestType: 'create' | 'status' | 'url'
@@ -868,6 +902,8 @@ export interface VideoRequestCompletedEvent extends BaseEventContext {
 /** Emitted when video usage metrics are available. */
 export interface VideoUsageEvent extends BaseEventContext {
   requestId: string
+  threadId?: string
+  runId?: string
   model: string
   usage: TokenUsage
 }

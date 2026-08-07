@@ -9,7 +9,7 @@ description: >
   in UI.
 type: sub-skill
 library: tanstack-ai
-library_version: '0.10.0'
+library_version: '0.42.0'
 sources:
   - 'TanStack/ai:docs/tools/tools.md'
   - 'TanStack/ai:docs/tools/server-tools.md'
@@ -368,8 +368,8 @@ export async function POST(request: Request) {
     adapter: openaiText('gpt-5.5'),
     messages,
     tools: [getProducts, compareProducts],
-    // maxIterations bounds model turns, not tool calls. Prefer maxToolCalls
-    // (and maxToolCallsPerTurn) when you need a tool-call budget.
+    // maxIterations bounds model turns, not tool calls. For tool budgets,
+    // use middleware onBeforeToolCall + onShouldContinue (see agentic-cycle docs).
     agentLoopStrategy: maxIterations(20),
   })
   return toServerSentEventsResponse(stream)
