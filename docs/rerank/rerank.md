@@ -335,6 +335,21 @@ try {
 
 > Passing an empty `documents` array throws before any request is made.
 
+## Runnable Example
+
+`examples/ts-react-rerank` is a small TanStack Start app that runs everything
+on this page: a fixed corpus of support articles listed newest-first, a query
+box, and a side-by-side view of the original order against the reranked order
+with scores. The provider dropdown switches between the Cohere and OpenRouter
+adapters over the same `rerank()` call.
+
+```bash
+cd examples/ts-react-rerank
+pnpm install
+cp .env.example .env   # add COHERE_API_KEY and/or OPENROUTER_API_KEY
+pnpm dev
+```
+
 ## Next Steps
 
 - [Cohere Adapter](../adapters/cohere) — models, configuration, and explicit API keys
