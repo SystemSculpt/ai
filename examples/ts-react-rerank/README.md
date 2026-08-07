@@ -71,12 +71,12 @@ result panel reads `usage.unitsBilled`. OpenRouter also reports `usage.cost`.
 
 ## Files worth reading
 
-| File                          | What's in it                                     |
-| ----------------------------- | ------------------------------------------------ |
-| `src/lib/server-functions.ts` | The `rerank()` calls and adapter selection       |
-| `src/lib/documents.ts`        | The corpus and why its order is deliberately bad |
-| `src/lib/models.ts`           | Model lists, re-exported from the adapter packages |
-| `src/components/RerankPanel.tsx` | The before/after UI                           |
+| File                             | What's in it                                       |
+| -------------------------------- | -------------------------------------------------- |
+| `src/lib/server-functions.ts`    | The `rerank()` calls and adapter selection         |
+| `src/lib/documents.ts`           | The corpus and why its order is deliberately bad   |
+| `src/lib/models.ts`              | Model lists, re-exported from the adapter packages |
+| `src/components/RerankPanel.tsx` | The before/after UI                                |
 
 ## Learn more
 

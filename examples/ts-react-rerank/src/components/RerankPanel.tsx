@@ -168,7 +168,8 @@ export default function RerankPanel() {
             <p className="font-medium">Rerank failed</p>
             <p className="text-sm text-red-300/90 mt-1">{error}</p>
             <p className="text-sm text-red-300/70 mt-2">
-              Set <code className="font-mono">{PROVIDER_ENV_VARS[provider]}</code>{' '}
+              Set{' '}
+              <code className="font-mono">{PROVIDER_ENV_VARS[provider]}</code>{' '}
               in <code className="font-mono">.env</code> and restart the dev
               server.
             </p>
