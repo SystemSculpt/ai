@@ -1,5 +1,14 @@
 # @tanstack/openai-base
 
+## 0.9.11
+
+### Patch Changes
+
+- [#936](https://github.com/TanStack/ai/pull/936) [`7d92296`](https://github.com/TanStack/ai/commit/7d922963b09b59dd693fcaef84bef3ffe35a0a94) - Preserve distinct Responses output item and function call IDs across server tool round trips.
+
+- Updated dependencies [[`59aa8b5`](https://github.com/TanStack/ai/commit/59aa8b5049549246227c8f2cf736ce50d05205a5)]:
+  - @tanstack/ai@0.44.0
+
 ## 0.9.10
 
 ### Patch Changes

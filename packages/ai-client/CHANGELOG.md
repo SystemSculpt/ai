@@ -1,5 +1,14 @@
 # @tanstack/ai-client
 
+## 0.23.2
+
+### Patch Changes
+
+- [#1053](https://github.com/TanStack/ai/pull/1053) [`a8bf8bc`](https://github.com/TanStack/ai/commit/a8bf8bc7326adb757b764a302fb3d4e77bdef147) - Stamp synthesized RUN_FINISHED / RUN_ERROR with the client request runId so interrupt resume settles when the provider continuation omits a terminal event.
+
+- Updated dependencies [[`59aa8b5`](https://github.com/TanStack/ai/commit/59aa8b5049549246227c8f2cf736ce50d05205a5)]:
+  - @tanstack/ai@0.44.0
+
 ## 0.23.1
 
 ### Patch Changes

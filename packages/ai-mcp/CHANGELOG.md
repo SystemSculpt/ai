@@ -1,5 +1,39 @@
 # @tanstack/ai-mcp
 
+## 0.3.0
+
+### Minor Changes
+
+- [#1031](https://github.com/TanStack/ai/pull/1031) [`3ba9c8b`](https://github.com/TanStack/ai/commit/3ba9c8b45fa6eee03abe7ce67a2e4d30a12531f4) - Forward MCP tool annotations and titles onto discovered tools. Each tool's
+  `metadata.mcp` now carries the server's `annotations` object verbatim
+  (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`,
+  `annotations.title`) plus a resolved display `title` (`title` →
+  `annotations.title` → `name`), on both the auto-discovery and explicit
+  `tools([...defs])` paths. Hosts can now label MCP tools and gate approvals on
+  the server's hints instead of only seeing a name and description.
+
+  The metadata is typed, not just documented. Every `tools()` overload — the
+  single client, the explicit `tools([...defs])` path, and the `createMCPClients`
+  pool — now returns `McpServerTool`s: structurally still `ServerTool`s (they drop
+  straight into `chat({ tools })`), but with `metadata.mcp` statically known to be
+  present and shaped like `McpToolMetadata`. So the read infers on its own:
+
+  ```ts
+  const tools = await mcp.tools()
+  tools.map((tool) => tool.metadata.mcp.annotations?.readOnlyHint) // boolean | undefined
+  tools.map((tool) => tool.metadata.mcp.annotaions) // compile error
+  ```
+
+  Adds the exported `McpServerTool` and `McpToolMetadata` types, and re-exports
+  the SDK's `ToolAnnotations` type. `McpToolMetadata.serverToolName` and `.title`
+  are required (both are always stamped), so consumers no longer write a fallback
+  for a value that is never missing.
+
+### Patch Changes
+
+- Updated dependencies [[`59aa8b5`](https://github.com/TanStack/ai/commit/59aa8b5049549246227c8f2cf736ce50d05205a5)]:
+  - @tanstack/ai@0.44.0
+
 ## 0.2.7
 
 ### Patch Changes

@@ -1,5 +1,20 @@
 # @tanstack/ai-fal
 
+## 0.10.0
+
+### Minor Changes
+
+- [#1047](https://github.com/TanStack/ai/pull/1047) [`59aa8b5`](https://github.com/TanStack/ai/commit/59aa8b5049549246227c8f2cf736ce50d05205a5) - feat(ai): add `timeout` and `abortSignal` to media generation activities
+
+  Media activities (`generateImage`, `generateAudio`, `generateVideo`, `generateSpeech`, `generateTranscription`, and `summarize`) now accept optional `timeout` and `abortSignal`. Core composes them into a request-specific effective signal, races the adapter call so hung providers reject, clears timeout resources on settle, and routes aborts to middleware `onAbort` (not `onError`).
+
+  `@tanstack/ai-fal` forwards the signal to `fal.subscribe()` / `fal.queue.submit()` per request — never via global `fal.config()` — so concurrent generations stay isolated.
+
+### Patch Changes
+
+- Updated dependencies [[`59aa8b5`](https://github.com/TanStack/ai/commit/59aa8b5049549246227c8f2cf736ce50d05205a5)]:
+  - @tanstack/ai@0.44.0
+
 ## 0.9.14
 
 ### Patch Changes

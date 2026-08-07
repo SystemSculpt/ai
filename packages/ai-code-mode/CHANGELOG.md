@@ -1,5 +1,38 @@
 # @tanstack/ai-code-mode
 
+## 0.3.11
+
+### Patch Changes
+
+- [#750](https://github.com/TanStack/ai/pull/750) [`b2b82e4`](https://github.com/TanStack/ai/commit/b2b82e4f88517c5b5c2d545810729cff7221c99e) - Add `@tanstack/ai-isolate-quickjs-bun`, a Code Mode isolate driver that runs QuickJS natively on the Bun runtime through `bun:ffi` (via [`quickjs-bun`](https://github.com/superpowerdotcom/quickjs-bun)).
+
+  It implements the same `IsolateDriver` contract as the existing drivers and is a drop-in replacement for `@tanstack/ai-isolate-quickjs` on Bun servers:
+
+  ```typescript
+  import { createQuickJSBunIsolateDriver } from '@tanstack/ai-isolate-quickjs-bun'
+  import { createCodeModeTool } from '@tanstack/ai-code-mode'
+
+  const executeTypescript = createCodeModeTool({
+    driver: createQuickJSBunIsolateDriver(),
+    tools: [myTool],
+  })
+  ```
+
+  Compared to the WASM driver:
+  - Native QuickJS through `bun:ffi` — no WebAssembly or asyncify overhead, and no native build step (the QuickJS sources are compiled once per process by Bun's embedded TinyCC).
+  - Each context gets a dedicated QuickJS runtime with its own memory and stack limits, so executions on different contexts are not serialized through a shared VM.
+  - Same normalized `MemoryLimitError` / `StackOverflowError` / `DisposedError` contract, console capture prefixes, and JSON tool-call protocol as the other drivers, plus a normalized `TimeoutError` for deadline expiry (the WASM driver surfaces timeouts as `InternalError: interrupted`).
+  - A configurable `maxToolCalls` limit (default 1000) bounds output and memory growth from untrusted sandbox code.
+
+  The driver requires Bun `>= 1.3.14` and throws an error when used on Node.js.
+
+  It pins `quickjs-bun` to an exact version (`0.1.2`) rather than a range, because that package is still pre-1.0 and compiles QuickJS through TinyCC/`bun:ffi` — its API and platform support may shift between patch releases (see the package README for the compatibility note and the Windows `QUICKJS_BUN_NATIVE_LIBRARY` requirement).
+
+  The `@tanstack/ai-code-mode` README and bundled skill are updated to document the new driver.
+
+- Updated dependencies [[`59aa8b5`](https://github.com/TanStack/ai/commit/59aa8b5049549246227c8f2cf736ce50d05205a5)]:
+  - @tanstack/ai@0.44.0
+
 ## 0.3.10
 
 ### Patch Changes

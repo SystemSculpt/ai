@@ -1,5 +1,13 @@
 # @tanstack/ai-grok
 
+## 0.14.11
+
+### Patch Changes
+
+- Updated dependencies [[`59aa8b5`](https://github.com/TanStack/ai/commit/59aa8b5049549246227c8f2cf736ce50d05205a5), [`7d92296`](https://github.com/TanStack/ai/commit/7d922963b09b59dd693fcaef84bef3ffe35a0a94)]:
+  - @tanstack/ai@0.44.0
+  - @tanstack/openai-base@0.9.11
+
 ## 0.14.10
 
 ### Patch Changes

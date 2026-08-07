@@ -1,5 +1,21 @@
 # @tanstack/ai-groq
 
+## 0.6.0
+
+### Minor Changes
+
+- [#837](https://github.com/TanStack/ai/pull/837) [`40b2730`](https://github.com/TanStack/ai/commit/40b27309a9d50ddbb66e5621a052e0eb53eb1493) - feat: add groqSummarize and createGroqSummarize adapters
+
+  Groq now exposes tree-shakeable summarize factories that wrap `GroqTextAdapter`
+  in `ChatStreamSummarizeAdapter`, matching the pattern used by OpenAI, Anthropic,
+  Gemini, Ollama, Grok, and OpenRouter.
+
+### Patch Changes
+
+- Updated dependencies [[`59aa8b5`](https://github.com/TanStack/ai/commit/59aa8b5049549246227c8f2cf736ce50d05205a5), [`7d92296`](https://github.com/TanStack/ai/commit/7d922963b09b59dd693fcaef84bef3ffe35a0a94)]:
+  - @tanstack/ai@0.44.0
+  - @tanstack/openai-base@0.9.11
+
 ## 0.5.4
 
 ### Patch Changes
