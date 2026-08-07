@@ -1,4 +1,3 @@
-import type { AnyTextAdapter } from '@tanstack/ai'
 import { createChatOptions } from '@tanstack/ai'
 import { createOpenaiChat } from '@tanstack/ai-openai'
 import { createAnthropicChat } from '@tanstack/ai-anthropic'
@@ -7,12 +6,17 @@ import { createGeminiTextInteractions } from '@tanstack/ai-gemini/experimental'
 import { createOllamaChat } from '@tanstack/ai-ollama'
 import { createGroqText } from '@tanstack/ai-groq'
 import { createGrokText } from '@tanstack/ai-grok'
+import { createBedrockText } from '@tanstack/ai-bedrock'
 import { openaiCompatibleText } from '@tanstack/ai-openai/compatible'
 import {
   createOpenRouterResponsesText,
   createOpenRouterText,
 } from '@tanstack/ai-openrouter'
+import { createMistralText } from '@tanstack/ai-mistral'
+import { createBytePlusText } from '@tanstack/ai-byteplus'
 import { HTTPClient } from '@openrouter/sdk'
+import type { AnyTextAdapter } from '@tanstack/ai'
+import type { BytePlusChatModel } from '@tanstack/ai-byteplus'
 import type { Feature, Provider } from '@/lib/types'
 
 const LLMOCK_DEFAULT_BASE = process.env.LLMOCK_URL || 'http://127.0.0.1:4010'
@@ -25,9 +29,16 @@ const defaultModels: Record<Provider, string> = {
   ollama: 'mistral',
   groq: 'llama-3.3-70b-versatile',
   grok: 'grok-build-0.1',
+  bedrock: 'openai.gpt-oss-120b-1:0',
+  'bedrock-responses': 'openai.gpt-oss-120b-1:0',
   openrouter: 'openai/gpt-4o',
   'openrouter-responses': 'openai/gpt-4o',
   'openai-compatible': 'gpt-4o',
+  mistral: 'mistral-large-latest',
+  // Structured-output features override this in `features.ts`:
+  // seed-2-0-lite-260428 rejects both `response_format: json_schema` and
+  // `json_object` (live-probed), so it can't drive any structured feature.
+  byteplus: 'seed-2-0-lite-260428',
   // ElevenLabs has no chat/text model — the support matrix already filters
   // it out of text features, but we still need an entry to satisfy the
   // Record<Provider, …> constraint.
@@ -47,6 +58,11 @@ export function createTextAdapter(
   // Anthropic, Gemini, Ollama SDKs include their path prefixes internally
   const base = LLMOCK_DEFAULT_BASE
   const openaiUrl = `${base}/v1`
+  // BytePlus Ark's data plane lives under /api/v3. aimock's compat-path
+  // normalizer rewrites any non-/v1//v2 path ending in /chat/completions to
+  // /v1/chat/completions, so the Ark prefix reaches the native OpenAI handler
+  // untouched — see testing/e2e/README.md § "BytePlus (Ark) path handling".
+  const arkUrl = `${base}/api/v3`
 
   // X-Test-Id header for per-test sequenceIndex isolation in aimock
   const testHeaders = testId ? { 'X-Test-Id': testId } : undefined
@@ -114,6 +130,37 @@ export function createTextAdapter(
           defaultHeaders: testHeaders,
         }),
       }),
+    // NOTE: Only the OpenAI-compatible Bedrock paths are E2E-covered here.
+    // The default `bedrock-converse` adapter uses the AWS binary event-stream
+    // (vnd.amazon.eventstream) Converse protocol, which aimock cannot replay —
+    // that path is covered by unit tests in packages/ai-bedrock/tests/converse/
+    // instead. See testing/e2e/README.md § "Bedrock Converse coverage gap".
+    bedrock: () =>
+      createChatOptions({
+        adapter: createBedrockText(
+          model as 'openai.gpt-oss-120b-1:0',
+          DUMMY_KEY,
+          {
+            baseURL: openaiUrl,
+            defaultHeaders: testHeaders,
+            // Converse is now the default; this matrix entry exercises the
+            // OpenAI-compatible Chat Completions path, so pin api: 'chat'.
+            api: 'chat',
+          },
+        ),
+      }),
+    'bedrock-responses': () =>
+      createChatOptions({
+        adapter: createBedrockText(
+          model as 'openai.gpt-oss-120b-1:0',
+          DUMMY_KEY,
+          {
+            baseURL: openaiUrl,
+            defaultHeaders: testHeaders,
+            api: 'responses',
+          },
+        ),
+      }),
     openrouter: () => {
       // OpenRouter SDK exposes an HTTPClient with beforeRequest hooks. Use
       // that to inject X-Test-Id, since `defaultHeaders` isn't supported and
@@ -161,6 +208,20 @@ export function createTextAdapter(
         adapter: openaiCompatibleText(model, {
           baseURL: openaiUrl,
           apiKey: DUMMY_KEY,
+          defaultHeaders: testHeaders,
+        }),
+      }),
+    mistral: () =>
+      createChatOptions({
+        adapter: createMistralText(model as 'mistral-large-latest', DUMMY_KEY, {
+          serverURL: base,
+          defaultHeaders: testHeaders,
+        }),
+      }),
+    byteplus: () =>
+      createChatOptions({
+        adapter: createBytePlusText(model as BytePlusChatModel, DUMMY_KEY, {
+          baseURL: arkUrl,
           defaultHeaders: testHeaders,
         }),
       }),

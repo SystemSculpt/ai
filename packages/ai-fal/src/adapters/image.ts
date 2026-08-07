@@ -2,15 +2,14 @@ import { fal } from '@fal-ai/client'
 import { resolveMediaPrompt } from '@tanstack/ai'
 import { BaseImageAdapter } from '@tanstack/ai/adapters'
 import {
-  buildFalUsage,
   configureFalClient,
-  takeBillableUnits,
   generateId as utilGenerateId,
-} from '../utils'
+} from '../utils/client'
+import { buildFalUsage, takeBillableUnits } from '../utils/billing'
 import { mapSizeToFalFormat } from '../image/image-provider-options'
 import { mapImageInputsToFalFields } from '../image/image-inputs'
 import type { OutputType, Result } from '@fal-ai/client'
-import type { FalClientConfig } from '../utils'
+import type { FalClientConfig } from '../utils/client'
 import type {
   GeneratedImage,
   ImageGenerationOptions,
@@ -88,7 +87,12 @@ export class FalImageAdapter<TModel extends FalModel> extends BaseImageAdapter<
 
     try {
       const input = this.buildInput(options, resolved)
-      const result = await fal.subscribe(this.model, { input })
+      // Pass request-specific abortSignal only — never via fal.config(), which
+      // is global and would cancel concurrent generations from other calls.
+      const result = await fal.subscribe(this.model, {
+        input,
+        ...(options.abortSignal ? { abortSignal: options.abortSignal } : {}),
+      })
       return this.transformResponse(result)
     } catch (error) {
       logger.errors('fal.generateImage fatal', {

@@ -5,14 +5,21 @@ import {
   MCPTaskRequiredToolError,
   MCPToolNotFoundError,
 } from './errors'
-import { makeMcpExecute, requiresTaskExecution, toServerTools } from './tools'
-import { resolveTransport } from './transport'
+import {
+  makeMcpExecute,
+  requiresTaskExecution,
+  toolMcpMetadata,
+  toServerTools,
+} from './tools'
+import { isTransportInstance, resolveTransport } from './transport'
+import type { TransportConfig } from './transport'
 import type {
   AnyToolDefinition,
   AutomaticDescriptor,
   DescriptorTools,
   MCPClientOptions,
   MappedServerTools,
+  McpServerTool,
   ServerDescriptor,
   ToolsOptions,
 } from './types'
@@ -34,6 +41,9 @@ export interface MCPClient<
    * Auto-discovery: every server tool as a ServerTool. With a generated
    * descriptor, tool names are typed as the descriptor's name literals;
    * args/results stay untyped — use the `tools(defs)` overload for typed args.
+   *
+   * Both overloads yield {@link McpServerTool}s, so `tool.metadata.mcp` (the
+   * server's title / annotations) is typed without an annotation or a cast.
    */
   tools: {
     (options?: ToolsOptions): Promise<DescriptorTools<TServer>>
@@ -56,6 +66,26 @@ export interface MCPClient<
     name: string,
     args?: Record<string, string>,
   ) => Promise<GetPromptResult>
+  callTool: (
+    name: string,
+    args?: Record<string, unknown>,
+  ) => Promise<Awaited<ReturnType<Client['callTool']>>>
+  /**
+   * The ORIGINAL connection descriptor this client was created from — the
+   * `transport` input and `prefix` passed to `createMCPClient`. Used by
+   * `createMcpAppCallHandler` to reconnect per-call (serverless-safe) without
+   * a separate transport-config map.
+   *
+   * `transport` is `undefined` when the client was built from a ready-made
+   * `Transport` instance rather than a serializable config — either via
+   * `createMCPClientFromTransport` (test-only) or `createMCPClient({ transport:
+   * <instance> })`. A live `Transport` instance is single-use and cannot be
+   * reconnected, so only serializable `TransportConfig`s are retained here.
+   */
+  getInfo: () => {
+    transport: TransportConfig | undefined
+    prefix: string | undefined
+  }
   close: () => Promise<void>
   [Symbol.asyncDispose]: () => Promise<void>
 }
@@ -67,10 +97,26 @@ class MCPClientImpl<
   readonly #client: Client
   #closed = false
   private readonly prefix?: string
+  // The ORIGINAL serializable transport config (undefined for clients built
+  // from a ready-made Transport instance, which is single-use / not reconnectable).
+  readonly #transport: TransportConfig | undefined
 
-  constructor(prefix?: string, name = 'tanstack-ai-mcp', version = '0.0.1') {
+  constructor(
+    prefix?: string,
+    name = 'tanstack-ai-mcp',
+    version = '0.0.1',
+    transport?: TransportConfig,
+  ) {
     this.prefix = prefix
+    this.#transport = transport
     this.#client = new Client({ name, version })
+  }
+
+  getInfo(): {
+    transport: TransportConfig | undefined
+    prefix: string | undefined
+  } {
+    return { transport: this.#transport, prefix: this.prefix }
   }
 
   async connect(transport: Transport): Promise<void> {
@@ -85,7 +131,7 @@ class MCPClientImpl<
   async tools(
     defsOrOptions?: ReadonlyArray<AnyToolDefinition> | ToolsOptions,
     maybeOptions: ToolsOptions = {},
-  ): Promise<Array<ServerTool>> {
+  ): Promise<Array<McpServerTool>> {
     if (this.#closed) throw new MCPConnectionError('MCP client is closed')
 
     const isDefs = Array.isArray(defsOrOptions)
@@ -94,7 +140,7 @@ class MCPClientImpl<
       : // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         ((defsOrOptions as ToolsOptions) ?? {}) // SDK interop: defsOrOptions may be undefined at runtime even though TS types it as ToolsOptions here
 
-    let tools: Array<ServerTool>
+    let tools: Array<McpServerTool>
     if (isDefs) {
       // Explicit path: bind each TanStack toolDefinition to the server by name.
       const available = new Map(
@@ -107,11 +153,35 @@ class MCPClientImpl<
         // on every callTool with -32600) — unlike discovery, which skips them.
         if (requiresTaskExecution(serverTool))
           throw new MCPTaskRequiredToolError(def.name)
-        const tool = def.server(
+        const bound = def.server(
           makeMcpExecute(this.#client, def.name, Boolean(def.outputSchema)),
         ) as ServerTool
-        if (this.prefix) tool.name = `${this.prefix}_${def.name}`
-        if (options.lazy) tool.lazy = true
+        // A caller-supplied definition may already carry its own `mcp` block,
+        // and `metadata.mcp` is untyped there — only spread it when it really
+        // is a plain object.
+        const existingMcp: unknown = bound.metadata?.mcp
+        const mcpBase =
+          existingMcp !== null && typeof existingMcp === 'object'
+            ? existingMcp
+            : {}
+        // Rebuilt rather than mutated in place: assigning `metadata` on a
+        // `ServerTool` can't narrow its declared `Record<string, any> |
+        // undefined` type, so a fresh literal is what lets the return value be
+        // an `McpServerTool` (typed `metadata.mcp`) without a cast.
+        //
+        // Stamping MCP metadata lets `serverToolNameOf` (and the call handler)
+        // recover the UNPREFIXED native name + serverId, and carries the
+        // server's display title / annotations to the host — mirrors
+        // toServerTools.
+        const tool: McpServerTool = {
+          ...bound,
+          ...(this.prefix ? { name: `${this.prefix}_${def.name}` } : {}),
+          ...(options.lazy ? { lazy: true } : {}),
+          metadata: {
+            ...bound.metadata,
+            mcp: { ...mcpBase, ...toolMcpMetadata(serverTool, this.prefix) },
+          },
+        }
         return tool
       })
     } else {
@@ -160,6 +230,14 @@ class MCPClientImpl<
     return this.#client.getPrompt({ name, arguments: args })
   }
 
+  async callTool(
+    name: string,
+    args?: Record<string, unknown>,
+  ): Promise<Awaited<ReturnType<Client['callTool']>>> {
+    if (this.#closed) throw new MCPConnectionError('MCP client is closed')
+    return this.#client.callTool({ name, arguments: args ?? {} })
+  }
+
   async close(): Promise<void> {
     if (this.#closed) return
     this.#closed = true
@@ -179,6 +257,9 @@ export async function createMCPClient<
     options.prefix,
     options.name,
     options.version,
+    // Only a serializable config is reconnectable; a ready-made Transport
+    // instance is single-use, so it is not retained as a descriptor.
+    isTransportInstance(options.transport) ? undefined : options.transport,
   )
   await impl.connect(transport)
   return impl

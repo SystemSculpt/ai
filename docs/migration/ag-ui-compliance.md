@@ -116,7 +116,7 @@ export async function POST(req: Request) {
   // const provider = body.forwardedProps?.provider
 
   const stream = chat({
-    adapter: openaiText('gpt-4o'),
+    adapter: openaiText('gpt-5.5'),
     messages: body.messages, // AG-UI mixed shape — works directly
     tools: serverTools,
   })
@@ -146,7 +146,7 @@ import { serverTools } from './tools'
 export async function POST(req: Request) {
   const params = await chatParamsFromRequest(req)
   const stream = chat({
-    adapter: openaiText('gpt-4o'),
+    adapter: openaiText('gpt-5.5'),
     messages: params.messages,
     tools: serverTools,
   })
@@ -179,8 +179,9 @@ import { serverTools } from './tools'
 export async function POST(req: Request) {
   const params = await chatParamsFromRequest(req)
   const stream = chat({
-    adapter: openaiText('gpt-4o'),
+    adapter: openaiText('gpt-5.5'),
     messages: params.messages,
+    // `mergeAgentTools` returns a plain array — pass it straight to `tools`.
     tools: mergeAgentTools(serverTools, params.tools), // ← merges client-declared tools
   })
   return toServerSentEventsResponse(stream)
@@ -188,6 +189,24 @@ export async function POST(req: Request) {
 ```
 
 `mergeAgentTools` registers client-declared tools as no-execute stubs server-side. The runtime emits a `ClientToolRequest` event when the model calls one; the client executes via its registered handler and posts the result back.
+
+> **Security — merging trusts the client to define part of the tool surface.**
+> `params.tools` is attacker-controllable: a malicious or compromised client can
+> put any `name` / `description` / `parameters` it likes in `RunAgentInput.tools`.
+> Merging them means those definitions are advertised to the model. Server tools
+> still win on name collision (a client **cannot** shadow or hijack a server
+> tool's `execute`), and client-declared tools are no-execute — they only ever
+> run by round-tripping back to that same client. But a client can still **expand
+> the advertised tool surface** and **inject arbitrary text into the model's
+> context** through tool names and descriptions (a prompt-injection vector).
+>
+> **The safe default is to register your tool definitions statically** in the
+> server's `tools` array (including client-executed tools — a definition with no
+> `.server()` still works) and **not** call `mergeAgentTools`. Then any tools a
+> client declares in the payload are ignored: the model is never told about
+> them, so it never calls them and they can't run. Only reach for
+> `mergeAgentTools` when you genuinely want the client to drive tool
+> advertisement and you trust that client.
 
 ## `forwardedProps` security (Tier 2+ only)
 
@@ -198,7 +217,7 @@ Skip this section if you're on Tier 1. `forwardedProps` is only surfaced when yo
 ```ts ignore
 // 🚫 UNSAFE — a client could override `adapter`, `model`, `tools`, system prompts, anything
 chat({
-  adapter: openaiText('gpt-4o'),
+  adapter: openaiText('gpt-5.5'),
   ...params,
   ...params.forwardedProps,
 })
@@ -222,7 +241,7 @@ export async function POST(req: Request) {
   // ✅ SAFE — explicit allowlist. Sampling params live in modelOptions under
   // each provider's native key (OpenAI: temperature / max_output_tokens).
   const stream = chat({
-    adapter: openaiText('gpt-4o'),
+    adapter: openaiText('gpt-5.5'),
     messages: params.messages,
     tools: mergeAgentTools(serverTools, params.tools),
     modelOptions: {
@@ -263,7 +282,7 @@ const tenantId =
     : defaultTenantId
 
 const stream = chat({
-  adapter: openaiText('gpt-4o'),
+  adapter: openaiText('gpt-5.5'),
   messages: params.messages,
   tools: serverTools,
   context: {
@@ -275,7 +294,7 @@ const stream = chat({
 
 ## Client-side: nothing required, one rename recommended
 
-`useChat` and the connection adapters (`fetchServerSentEvents`, `fetchHttpStream`) handle the new wire format internally. Existing `UIMessage` state is unchanged. `clientTools(...)` declarations are now automatically advertised to the server in the request payload.
+`useChat` and the connection adapters (`fetchServerSentEvents`, `fetchHttpStream`) handle the new wire format internally. Existing `UIMessage` state is unchanged. The tools you pass to `useChat({ tools })` are now automatically advertised to the server in the request payload.
 
 ### `body` → `forwardedProps` (recommended)
 
@@ -288,13 +307,13 @@ import { fetchServerSentEvents } from '@tanstack/ai-client'
 // Before — still works, but deprecated
 useChat({
   connection: fetchServerSentEvents('/api/chat'),
-  body: { provider: 'openai', model: 'gpt-4o' },
+  body: { provider: 'openai', model: 'gpt-5.5' },
 })
 
 // After — recommended
 useChat({
   connection: fetchServerSentEvents('/api/chat'),
-  forwardedProps: { provider: 'openai', model: 'gpt-4o' },
+  forwardedProps: { provider: 'openai', model: 'gpt-5.5' },
 })
 ```
 
@@ -321,7 +340,7 @@ If you don't pass `threadId`, one is generated automatically and persists for th
 ## Tool-merge semantics
 
 - **Server tools win on name collision.** A tool registered server-side via `toolDefinition().server(...)` always executes server-side.
-- **Client-only tools become no-execute stubs** in `chat()` (when registered via `mergeAgentTools`). The runtime emits a `ClientToolRequest` event back to the client; the client's registered handler (via `clientTools(...)`) executes locally and posts the result.
+- **Client-only tools become no-execute stubs** in `chat()` (when registered via `mergeAgentTools`). The runtime emits a `ClientToolRequest` event back to the client; the client's registered handler (the `.client(...)` tool in the hook's `tools` array) executes locally and posts the result.
 - **Dual-handler (both have it):** server executes, then `chat-client.ts`'s `onToolCall` fires the client's handler as a UI side-effect when the streamed tool result event arrives. The server's result is authoritative for the conversation.
 
 ## Talking to a foreign AG-UI server
@@ -344,7 +363,37 @@ Pure AG-UI `RunAgentInput` payloads (no TanStack `parts` field) work end-to-end:
 
 ## `@ag-ui/core` bump
 
-`@tanstack/ai` now depends on `@ag-ui/core@^0.0.52`. If your code imports types from `@tanstack/ai` that re-export AG-UI types, you may need minor type adjustments — see the changeset for specifics.
+`@tanstack/ai` now depends on `@ag-ui/core@0.1.1-canary.beta.0`. If your code imports types from `@tanstack/ai` that re-export AG-UI types, you may need minor type adjustments — see the changeset for specifics.
+
+### zod is no longer installed for you
+
+`@ag-ui/core` used to list `zod` as a runtime dependency, so every
+`@tanstack/ai` install pulled zod in transitively. As of `0.1.x` it declares zod
+as an optional peer instead, and `@tanstack/ai` no longer uses zod anywhere —
+the package now ships with no schema-validation runtime at all.
+
+`chatParamsFromRequest` / `chatParamsFromRequestBody` were the only zod
+consumers: they validated the request body with AG-UI's `RunAgentInputSchema`.
+They now validate the same `RunAgentInput` contract structurally. Their
+signatures, their thrown types (`AGUIError`, and a 400 `Response` from
+`chatParamsFromRequest`), and the `parts` passthrough on messages are all
+unchanged. The one visible difference is friendlier failures — the error names
+the offending field, e.g.:
+
+```
+Request body is not a valid AG-UI RunAgentInput. ... Validation errors: messages[1].content must be a string
+```
+
+zod is still fully supported for defining tools; it is just no longer installed
+on your behalf. If your project used zod without declaring it — relying on the
+transitive copy — add it explicitly:
+
+```bash
+npm install zod
+```
+
+If you define tools with a different Standard Schema library (ArkType, Valibot),
+you can now drop zod entirely.
 
 ## Out of scope (existing behavior preserved)
 

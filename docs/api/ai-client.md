@@ -28,7 +28,6 @@ The main client class for managing chat state.
 ```typescript
 import {
   ChatClient,
-  clientTools,
   fetchServerSentEvents,
   type UIMessage,
 } from "@tanstack/ai-client";
@@ -37,12 +36,60 @@ import { myClientTool } from "./tools";
 const client = new ChatClient({
   connection: fetchServerSentEvents("/api/chat"),
   initialMessages: [],
-  tools: clientTools(myClientTool),
+  tools: [myClientTool],
   onMessagesChange: (messages: UIMessage[]) => {
     console.log("Messages updated:", messages);
   },
 });
+
+// A new client is IDLE. Attach it when your view appears, detach when it goes.
+client.attach();
 ```
+
+### Lifecycle: `attach()` and `detach()`
+
+One page can hold many chats. A browser allows only about six connections to one
+origin, and a chat that is tailing a run holds one for as long as that run lasts. If
+every chat held a connection, a handful of open views would use every slot and every
+other request would queue behind them, including the request that loads your messages.
+
+So the connection follows the view. A new client holds none, `attach()` starts it, and
+`detach()` stops it.
+
+If you use a framework package (`@tanstack/ai-react`, `-vue`, `-solid`, `-svelte`,
+`-preact`, `-angular`), the hook already does this: it attaches when its view mounts
+and detaches when it unmounts. Call these yourself only when you use `ChatClient`
+directly.
+
+```typescript
+import { ChatClient, fetchServerSentEvents } from "@tanstack/ai-client";
+
+const client = new ChatClient({
+  connection: fetchServerSentEvents("/api/chat"),
+  threadId: "thread-1",
+  persistence: true,
+});
+
+client.attach(); // start: rejoin a run in progress, and load the thread
+client.detach(); // stop: drop the connection, keep messages and the run pointer
+```
+
+What each one guarantees:
+
+- `attach()` is safe to call more than once. Attaching an attached client does nothing.
+- `detach()` keeps the transcript, the resume pointer and the run id. The run keeps
+  going on the server while nobody watches, so re-attaching repaints at once and picks
+  it back up from the durable log.
+- `detach()` is neither `stop()` (which ends the run) nor `dispose()` (which ends the
+  client). It says only that no view is watching right now.
+- A chat with no persistence has no resume pointer and no stored thread, so `attach()`
+  issues no request at all.
+
+#### Migrating from constructor tailing
+
+Earlier versions started tailing inside the constructor. If you build a `ChatClient`
+yourself, add `client.attach()` where your view appears and `client.detach()` where it
+goes away. Users of the framework hooks need no change.
 
 ### Constructor Options
 
@@ -97,6 +144,18 @@ import { client } from "./client";
 
 await client.reload();
 ```
+
+#### `attach()`
+
+Start tailing. Rejoins a run that is still in progress and, in server-authoritative
+mode, loads the stored thread. Idempotent. See
+[Lifecycle](#lifecycle-attach-and-detach).
+
+#### `detach()`
+
+Stop tailing and drop the connection. Keeps messages, the run pointer and the run
+id, so a later `attach()` continues where it left off. See
+[Lifecycle](#lifecycle-attach-and-detach).
 
 #### `stop()`
 
@@ -281,7 +340,7 @@ const adapter = stream(async (messages, data, signal) => {
 
 ### `clientTools(...tools)`
 
-Creates a typed array of client tools with proper type inference. This eliminates the need for `as const` when defining tool arrays and enables proper discriminated union type narrowing.
+**Optional.** A plain array — `tools: [tool1, tool2]` — already narrows tool names, inputs and outputs without any wrapper or `as const`. `clientTools()` is an identity helper that performs the same capture explicitly; reach for it only when you want to build a shared, reusable tools tuple outside the hook/options call.
 
 ```typescript
 import {
@@ -320,7 +379,7 @@ const tool2Client = myTool2.client((input) => {
   return { result: input.query };
 });
 
-// Create typed tools array (no 'as const' needed!)
+// The explicit-capture form (equivalent to `[tool1Client, tool2Client]`).
 const tools = clientTools(tool1Client, tool2Client);
 
 // Now when you use these tools in chat options:
@@ -348,13 +407,12 @@ Helper function to create typed chat client options with proper type inference.
 ```typescript
 import {
   createChatClientOptions,
-  clientTools,
   fetchServerSentEvents,
   type InferChatMessages,
 } from "@tanstack/ai-client";
 import { tool1, tool2 } from "./tools";
 
-const tools = clientTools(tool1, tool2);
+const tools = [tool1, tool2];
 
 const chatOptions = createChatClientOptions({
   connection: fetchServerSentEvents("/api/chat"),
@@ -370,7 +428,6 @@ type ChatMessages = InferChatMessages<typeof chatOptions>;
 ```typescript
 import {
   createChatClientOptions,
-  clientTools,
   fetchServerSentEvents,
 } from "@tanstack/ai-client";
 import { toolDefinition } from "@tanstack/ai";
@@ -394,7 +451,7 @@ const tool = projectTool.client<ClientContext>((input, ctx: { context: ClientCon
 
 const chatOptions = createChatClientOptions({
   connection: fetchServerSentEvents("/api/chat"),
-  tools: clientTools(tool),
+  tools: [tool],
   context: {
     activeProjectId: "project_123",
   },
@@ -454,12 +511,12 @@ interface ToolCallPart {
   arguments: string; // JSON string (may be incomplete during streaming)
   input?: any; // Parsed tool input (typed from tool's inputSchema)
   state: ToolCallState;
-  approval?: ApprovalRequest;
+  approval?: ApprovalRequest; // only on tools declared `needsApproval: true`
   output?: any; // Tool execution output (typed from tool's outputSchema)
 }
 ```
 
-When using typed tools with `clientTools()` and `createChatClientOptions()`, the `input` and `output` fields are automatically typed based on your tool's Zod schemas, and `name` becomes a discriminated union enabling type narrowing.
+When you pass a typed `tools` array (a plain array works — `clientTools()` is optional), the `input` and `output` fields are automatically typed based on your tool's Zod schemas, and `name` becomes a discriminated union enabling type narrowing. The `approval` field is present **only** on parts for tools declared with `needsApproval: true` — narrow by `part.name` (or guard with `'approval' in part`) before accessing it.
 
 ### `ToolResultPart`
 

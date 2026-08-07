@@ -52,13 +52,10 @@ const PROVIDER_MODELS: Record<
   // dropdown-only marker (stripped before the model id reaches the
   // adapter) that opts into adaptive thinking with `effort: 'max'` plus
   // a bumped `maxTokens` budget so the reasoning + JSON both fit.
-  //
-  // The `*-fast` variants in `ai-anthropic/model-meta` (e.g.
-  // `claude-opus-4-7-fast`) currently 404 against the Messages API —
-  // that ~6× pricing in the meta entries looks like priority-tier
-  // pricing (selected via `service_tier: 'priority'` on the request),
-  // not a distinct model id. Omitted until the real ids are confirmed.
   anthropic: [
+    { value: 'claude-sonnet-5', label: 'Claude Sonnet 5' },
+    { value: 'claude-fable-5', label: 'Claude Fable 5' },
+    { value: 'claude-opus-4-8', label: 'Claude Opus 4.8' },
     { value: 'claude-sonnet-4-5', label: 'Claude Sonnet 4.5' },
     { value: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6' },
     { value: 'claude-opus-4-5', label: 'Claude Opus 4.5' },
@@ -83,7 +80,9 @@ const PROVIDER_MODELS: Record<
   // keys on the exact string, so any drift here silently breaks
   // combined-mode routing.
   gemini: [
+    { value: 'gemini-3.6-flash', label: 'Gemini 3.6 Flash' },
     { value: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash' },
+    { value: 'gemini-3.5-flash-lite', label: 'Gemini 3.5 Flash Lite' },
     { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash (Preview)' },
     { value: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro (Preview)' },
     { value: 'gemini-3.1-flash-lite', label: 'Gemini 3.1 Flash Lite' },
@@ -250,13 +249,10 @@ function StructuredOutputPage() {
   }
 
   const chat = useChat({
-    id: 'structured-output:useChat',
+    threadId: 'structured-output:useChat',
     outputSchema: GuitarRecommendationSchema,
     connection: fetchServerSentEvents('/api/structured-output'),
     forwardedProps: { provider, model, stream },
-    devtools: {
-      outputKind: 'structured',
-    },
     onChunk: handleChunk,
     onError: (err) => {
       setError(err.message)

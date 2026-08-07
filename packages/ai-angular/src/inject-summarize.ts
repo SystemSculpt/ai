@@ -1,39 +1,44 @@
 import { injectGeneration } from './inject-generation'
+import { reconstructSummarizeResult } from '@tanstack/ai-client'
 import type { Signal } from '@angular/core'
 import type { SummarizationResult } from '@tanstack/ai'
 import type {
   GenerationClientState,
-  InferGenerationOutput,
+  GenerationPersistenceOptions,
+  InferGenerationOutputFromReturn,
   SummarizeGenerateInput,
 } from '@tanstack/ai-client'
-import type { InjectGenerationOptions } from './inject-generation'
+import type {
+  InjectGenerationOptions,
+  InjectGenerationResult,
+} from './inject-generation'
 
 export type InjectSummarizeOptions<TOutput = SummarizationResult> = Omit<
   InjectGenerationOptions<SummarizeGenerateInput, SummarizationResult, TOutput>,
-  'onResult'
+  'onResult' | 'reconstructResult'
 > & {
   onResult?: (result: SummarizationResult) => TOutput | null | void
 }
 
-export interface InjectSummarizeResult<TOutput = SummarizationResult> {
+export interface InjectSummarizeResult<
+  TOutput = SummarizationResult,
+> extends Omit<InjectGenerationResult<TOutput>, 'generate'> {
   generate: (input: SummarizeGenerateInput) => Promise<void>
   result: Signal<TOutput | null>
   isLoading: Signal<boolean>
   error: Signal<Error | undefined>
   status: Signal<GenerationClientState>
-  stop: () => void
-  reset: () => void
 }
 
-export function injectSummarize<
-  TOnResult extends ((result: SummarizationResult) => any) | undefined =
-    undefined,
->(
-  options: Omit<InjectSummarizeOptions, 'onResult'> & {
-    onResult?: TOnResult
-  },
+export function injectSummarize<TTransformed = void>(
+  options: Omit<
+    InjectSummarizeOptions,
+    'onResult' | 'persistence' | 'threadId' | 'id'
+  > & {
+    onResult?: (result: SummarizationResult) => TTransformed
+  } & GenerationPersistenceOptions,
 ): InjectSummarizeResult<
-  InferGenerationOutput<SummarizationResult, TOnResult>
+  InferGenerationOutputFromReturn<SummarizationResult, TTransformed>
 > {
   const devtools = {
     ...options.devtools,
@@ -41,18 +46,14 @@ export function injectSummarize<
     hookName: 'injectSummarize',
     outputKind: 'text' as const,
   }
-  const { generate, result, isLoading, error, status, stop, reset } =
-    injectGeneration<SummarizeGenerateInput, SummarizationResult, TOnResult>({
-      ...options,
-      devtools,
-    })
-  return {
-    generate: generate as (input: SummarizeGenerateInput) => Promise<void>,
-    result,
-    isLoading,
-    error,
-    status,
-    stop,
-    reset,
-  }
+  const generation = injectGeneration<
+    SummarizeGenerateInput,
+    SummarizationResult,
+    TTransformed
+  >({
+    ...options,
+    devtools,
+    reconstructResult: reconstructSummarizeResult,
+  })
+  return generation
 }

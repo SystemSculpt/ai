@@ -2,7 +2,7 @@
 title: Groq
 id: groq-adapter
 order: 6
-description: "Use Groq's fast inference API with TanStack AI for low-latency LLM responses — Llama and other open-weight models via @tanstack/ai-groq."
+description: "Use Groq's fast inference API with TanStack AI for low-latency LLM responses and Whisper transcription — Llama and other open-weight models via @tanstack/ai-groq."
 keywords:
   - tanstack ai
   - groq
@@ -11,9 +11,11 @@ keywords:
   - low latency
   - adapter
   - llm
+  - whisper
+  - transcription
 ---
 
-The Groq adapter provides access to Groq's fast inference API, featuring the world's fastest LLM inference.
+The Groq adapter provides access to Groq's fast inference API, featuring the world's fastest LLM inference and Whisper-based audio transcription.
 
 ## Installation
 
@@ -108,6 +110,32 @@ const stream = chat({
 });
 ```
 
+## Transcription
+
+Groq exposes Whisper-based speech-to-text via `groqTranscription()` and the `generateTranscription()` activity. The `audio` input accepts a `File`, `Blob`, `ArrayBuffer`, base64 string, data URL, or an `https://` URL (forwarded directly to Groq without re-uploading).
+
+```typescript
+import { generateTranscription } from "@tanstack/ai";
+import { groqTranscription } from "@tanstack/ai-groq";
+
+const result = await generateTranscription({
+  adapter: groqTranscription("whisper-large-v3-turbo"),
+  audio: "https://example.com/recording.mp3",
+  language: "en",
+});
+
+console.log(result.text);
+
+// verbose_json (the default) populates language, duration, and timestamped segments
+for (const segment of result.segments ?? []) {
+  console.log(`[${segment.start}s → ${segment.end}s] ${segment.text}`);
+}
+```
+
+Supported models: `whisper-large-v3-turbo`, `whisper-large-v3`. Supported `responseFormat` values: `json`, `text`, `verbose_json` (default). `srt` and `vtt` are not supported by Groq.
+
+See [Transcription](../media/transcription) for the full API.
+
 ## Model Options
 
 Groq supports various provider-specific options. Sampling parameters live here too — `temperature`, `top_p`, and `max_completion_tokens` (Groq's token-limit key) — rather than as root-level props on `chat()`:
@@ -137,6 +165,24 @@ Enable reasoning for models that support it (e.g., `openai/gpt-oss-120b`, `qwen/
 modelOptions: {
   reasoning_effort: "medium", // "none" | "default" | "low" | "medium" | "high"
 }
+```
+
+## Summarization
+
+Summarize long text content:
+
+```typescript
+import { summarize } from "@tanstack/ai";
+import { groqSummarize } from "@tanstack/ai-groq";
+
+const result = await summarize({
+  adapter: groqSummarize("llama-3.3-70b-versatile"),
+  text: "Your long text to summarize...",
+  maxLength: 100,
+  style: "concise", // "concise" | "bullet-points" | "paragraph"
+});
+
+console.log(result.summary);
 ```
 
 ## Supported Models
@@ -202,11 +248,26 @@ Creates a Groq chat adapter with an explicit API key.
 
 **Returns:** A Groq chat adapter instance.
 
+### `groqSummarize(model, config?)`
+
+Creates a Groq summarization adapter using environment variables.
+
+**Returns:** A Groq summarize adapter instance.
+
+### `createGroqSummarize(model, apiKey, config?)`
+
+Creates a Groq summarization adapter with an explicit API key.
+
+**Returns:** A Groq summarize adapter instance.
+
+### `groqTranscription(model, config?)` / `createGroqTranscription(model, apiKey, config?)`
+
+Creates a Groq transcription (speech-to-text) adapter. The short form reads `GROQ_API_KEY` from the environment; the `create*` form takes an explicit API key. Supported models: `whisper-large-v3-turbo`, `whisper-large-v3`.
+
 ## Limitations
 
 - **Text-to-Speech**: Groq does not currently expose a TTS adapter. Use OpenAI, Gemini, ElevenLabs, or fal for speech generation.
 - **Image Generation**: Groq does not support image generation. Use OpenAI, Gemini, or fal for image generation.
-- **Transcription**: Groq does not currently expose a transcription adapter through TanStack AI.
 
 ## Next Steps
 

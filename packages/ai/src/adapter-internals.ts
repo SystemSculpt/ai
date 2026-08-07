@@ -10,3 +10,18 @@ export {
   toRunErrorPayload,
   toRunErrorRawEvent,
 } from './activities/error-payload'
+export {
+  getSandboxRuntime,
+  provideSandboxRuntime,
+  SandboxRuntimeCapability,
+} from './activities/chat/middleware/sandbox-runtime'
+export {
+  getRunDisconnect,
+  provideRunDisconnect,
+  RunDisconnectCapability,
+} from './activities/chat/middleware/run-disconnect'
+export {
+  getPendingTurn,
+  PendingTurnCapability,
+  providePendingTurn,
+} from './activities/chat/middleware/pending-turn'

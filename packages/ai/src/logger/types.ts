@@ -29,7 +29,7 @@ export interface Logger {
  */
 export interface DebugCategories {
   /**
-   * Raw chunks/frames received from a provider SDK (OpenAI, Anthropic, Gemini, Ollama, Grok, Groq, OpenRouter, fal, ElevenLabs). Emitted inside every streaming adapter's chunk loop.
+   * Raw chunks/frames received from a provider SDK (OpenAI, Anthropic, Gemini, Ollama, Grok, Groq, OpenRouter, fal, ElevenLabs, BytePlus). Emitted inside every streaming adapter's chunk loop.
    */
   provider?: boolean
   /**
@@ -60,6 +60,11 @@ export interface DebugCategories {
    * Outgoing call metadata (provider, model, message/tool counts) emitted before each adapter SDK call.
    */
   request?: boolean
+  /**
+   * Sandbox internals: watcher start/stop + mechanism, file events, sandbox
+   * hook dispatch, ensure/bootstrap and lifecycle transitions. Chat-only.
+   */
+  sandbox?: boolean
 }
 
 /**

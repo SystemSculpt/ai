@@ -4,12 +4,12 @@ description: >
   Isomorphic tool system: toolDefinition() with Zod schemas,
   .server() and .client() implementations, passing tools to both
   chat() on server and useChat/clientTools on client, tool approval
-  flows with needsApproval and addToolApprovalResponse(), lazy tool
+  flows with needsApproval and bound interrupts (resolveInterrupt), lazy tool
   discovery with lazy:true, rendering ToolCallPart and ToolResultPart
   in UI.
 type: sub-skill
 library: tanstack-ai
-library_version: '0.10.0'
+library_version: '0.42.0'
 sources:
   - 'TanStack/ai:docs/tools/tools.md'
   - 'TanStack/ai:docs/tools/server-tools.md'
@@ -75,7 +75,7 @@ import { updateCartUIDef } from '@/tools/definitions'
 export async function POST(request: Request) {
   const { messages } = await request.json()
   const stream = chat({
-    adapter: openaiText('gpt-4o'),
+    adapter: openaiText('gpt-5.5'),
     messages,
     tools: [getProducts, updateCartUIDef], // server tool + client definition
   })
@@ -108,14 +108,14 @@ function ChatPage() {
     connection: fetchServerSentEvents("/api/chat"),
     tools,
   });
-  type Messages = InferChatMessages<typeof chatOptions>;
-
   const { messages, sendMessage } = useChat(chatOptions);
+  // InferChatMessages ties part types to the configured tools when needed:
+  // type Messages = InferChatMessages<typeof chatOptions>
 
   return (
     <div>
       <span>Cart: {cartCount}</span>
-      {(messages as Messages).map((msg) => (
+      {messages.map((msg) => (
         <div key={msg.id}>
           {msg.parts.map((part) => {
             if (part.type === "text") return <p>{part.content}</p>;
@@ -158,7 +158,7 @@ const getUserData = getUserDataDef.server(async ({ userId }) => {
 
 // In your route handler:
 const stream = chat({
-  adapter: openaiText('gpt-4o'),
+  adapter: openaiText('gpt-5.5'),
   messages,
   tools: [getUserData],
 })
@@ -188,7 +188,7 @@ Server -- pass definition only (no execute function):
 
 ```typescript
 const stream = chat({
-  adapter: openaiText('gpt-4o'),
+  adapter: openaiText('gpt-5.5'),
   messages,
   tools: [showNotificationDef],
 })
@@ -239,9 +239,11 @@ function ChatPage() {
 
 ### Pattern 3: Tool with Approval Flow
 
-Set `needsApproval: true` in the definition. Execution pauses until the client
-calls `addToolApprovalResponse()`. The part has `state: "approval-requested"`
-and an `approval` object with an `id`.
+Set `needsApproval: true` in the definition. Execution pauses with
+`RUN_FINISHED.outcome.type === 'interrupt'`. The primary client API is bound
+`interrupts` + `resolveInterrupt` / `resolveInterrupts` / `cancel`.
+`addToolApprovalResponse` and `pendingInterrupts` remain as deprecated
+compatibility shims during migration.
 
 ```typescript
 import { toolDefinition } from '@tanstack/ai'
@@ -265,62 +267,65 @@ export const sendEmail = sendEmailDef.server(async ({ to, subject, body }) => {
 })
 ```
 
-Client -- render approval UI and respond:
+Server route must forward `resume` / `parentRunId` (via `chatParamsFromRequest`
+or equivalent). Client -- render bound interrupts:
 
 ```typescript
 import { useChat, fetchServerSentEvents } from "@tanstack/ai-react";
 
 function ChatPage() {
-  const { messages, addToolApprovalResponse } = useChat({
+  const { messages, interrupts, sendMessage } = useChat({
     connection: fetchServerSentEvents("/api/chat"),
   });
 
   return (
     <div>
+      {interrupts.map((interrupt) => {
+        if (interrupt.kind !== "tool-approval") return null;
+        return (
+          <div key={interrupt.id}>
+            <p>Approve "{interrupt.toolName}"?</p>
+            <pre>{JSON.stringify(interrupt.originalArgs, null, 2)}</pre>
+            <button onClick={() => interrupt.resolveInterrupt(true)}>
+              Approve
+            </button>
+            <button onClick={() => interrupt.resolveInterrupt(false)}>
+              Deny
+            </button>
+            <button onClick={() => interrupt.cancel()}>Cancel</button>
+          </div>
+        );
+      })}
       {messages.map((msg) => (
         <div key={msg.id}>
-          {msg.parts.map((part) => {
-            if (part.type === "text") return <p>{part.content}</p>;
-            if (
-              part.type === "tool-call" &&
-              part.state === "approval-requested" &&
-              part.approval
-            ) {
-              return (
-                <div key={part.id}>
-                  <p>Approve "{part.name}"?</p>
-                  <pre>{part.arguments}</pre>
-                  <button
-                    onClick={() =>
-                      addToolApprovalResponse({
-                        id: part.approval!.id,
-                        approved: true,
-                      })
-                    }
-                  >
-                    Approve
-                  </button>
-                  <button
-                    onClick={() =>
-                      addToolApprovalResponse({
-                        id: part.approval!.id,
-                        approved: false,
-                      })
-                    }
-                  >
-                    Deny
-                  </button>
-                </div>
-              );
-            }
-            return null;
-          })}
+          {msg.parts.map((part) =>
+            part.type === "text" ? <p key={part.content}>{part.content}</p> : null
+          )}
         </div>
       ))}
     </div>
   );
 }
 ```
+
+Batch all pending approvals with `resolveInterrupts` (void — submission is
+async; watch `resuming` / `interruptErrors`):
+
+```typescript
+// Payloadless tool-approvals only
+resolveInterrupts(true)
+
+// Or per-item:
+resolveInterrupts((interrupt) => {
+  if (interrupt.kind === 'tool-approval') {
+    interrupt.resolveInterrupt(true)
+  }
+})
+```
+
+Migration: `pendingInterrupts` aliases `interrupts`; `addToolApprovalResponse`
+forwards to the matching bound approval when present. Prefer the bound methods
+above for new code. See `docs/interrupts/`.
 
 ### Pattern 4: Lazy Tool Discovery
 
@@ -363,6 +368,8 @@ export async function POST(request: Request) {
     adapter: openaiText('gpt-5.5'),
     messages,
     tools: [getProducts, compareProducts],
+    // maxIterations bounds model turns, not tool calls. For tool budgets,
+    // use middleware onBeforeToolCall + onShouldContinue (see agentic-cycle docs).
     agentLoopStrategy: maxIterations(20),
   })
   return toServerSentEventsResponse(stream)
@@ -404,6 +411,13 @@ The post-discovery payload always returns the full description and schema regard
 
 `@tanstack/ai-mcp` lets a server-side `chat()` call discover and invoke tools
 hosted on any MCP server (Streamable HTTP, SSE, or stdio).
+
+**MCP tools and UI resources:** When an MCP tool result carries a `ui://`
+resource URI (via `_meta.ui.resourceUri`), TanStack AI surfaces it as a
+`UIResourcePart` on the assistant `UIMessage` in the client message list.
+`UIResourcePart` is a presentational-only part — it never enters model input.
+See the `@tanstack/ai-mcp` skill for the full MCP Apps API
+(`createMcpAppCallHandler`, `createMcpAppBridge`, `MCPAppResource`).
 
 ### Basic usage — auto-discovery
 
@@ -628,7 +642,7 @@ import { anthropicText } from '@tanstack/ai-anthropic'
 export async function POST(request: Request) {
   const { messages } = await request.json()
   const stream = chat({
-    adapter: anthropicText('claude-sonnet-4-5'),
+    adapter: anthropicText('claude-sonnet-4-6'),
     messages,
     tools: [
       codeExecutionTool(
@@ -664,7 +678,7 @@ import { openaiText } from '@tanstack/ai-openai'
 export async function POST(request: Request) {
   const { messages } = await request.json()
   const stream = chat({
-    adapter: openaiText('gpt-5.2'),
+    adapter: openaiText('gpt-5.5'),
     messages,
     tools: [
       shellTool({

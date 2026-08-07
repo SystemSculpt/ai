@@ -2,11 +2,10 @@ import { fal } from '@fal-ai/client'
 import { resolveMediaPrompt } from '@tanstack/ai'
 import { BaseVideoAdapter } from '@tanstack/ai/adapters'
 import {
-  buildFalUsage,
   configureFalClient,
-  takeBillableUnits,
   generateId as utilGenerateId,
-} from '../utils'
+} from '../utils/client'
+import { buildFalUsage, takeBillableUnits } from '../utils/billing'
 import { mapVideoSizeToFalFormat } from '../video/video-provider-options'
 import { mapImageInputsToFalVideoFields } from '../image/image-inputs'
 import type {
@@ -25,7 +24,7 @@ import type {
   FalVideoPromptModalitiesFor,
   FalVideoProviderOptions,
 } from '../model-meta'
-import type { FalClientConfig } from '../utils'
+import type { FalClientConfig } from '../utils/client'
 
 /**
  * Map video conditioning inputs onto fal field names.
@@ -180,9 +179,11 @@ export class FalVideoAdapter<TModel extends FalModel> extends BaseVideoAdapter<
         ...(duration ? { duration } : {}),
       } as FalModelInput<TModel>
 
-      // Submit to queue and get request ID
+      // Submit to queue and get request ID. Request-specific abortSignal only —
+      // never via fal.config() (global; would cancel concurrent jobs).
       const { request_id } = await fal.queue.submit(this.model, {
         input,
+        ...(options.abortSignal ? { abortSignal: options.abortSignal } : {}),
       })
 
       return {

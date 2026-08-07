@@ -1,33 +1,93 @@
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js'
-import type { Tool as McpToolDef } from '@modelcontextprotocol/sdk/types.js'
-import type { ContentPart, ServerTool } from '@tanstack/ai'
+import type {
+  Tool as McpToolDef,
+  ToolAnnotations,
+} from '@modelcontextprotocol/sdk/types.js'
+import type { ContentPart } from '@tanstack/ai'
+import type { McpServerTool, McpToolMetadata } from './types'
 
 interface ConvertOptions {
   prefix?: string
   lazy?: boolean
 }
 
+/** Reads the MCP Apps `_meta.ui.resourceUri` link from a tool def, if present. */
+export function extractUiResourceUri(def: McpToolDef): string | undefined {
+  const meta = (def as { _meta?: { ui?: { resourceUri?: unknown } } })._meta
+  const uri = meta?.ui?.resourceUri
+  return typeof uri === 'string' ? uri : undefined
+}
+
+/**
+ * The human-readable display name for a tool, following the MCP spec's
+ * precedence: the top-level `title` field wins, then the legacy
+ * `annotations.title`, and finally the programmatic `name`.
+ */
+function toolDisplayTitle(def: McpToolDef): string {
+  return def.title ?? def.annotations?.title ?? def.name
+}
+
+/**
+ * Build the `metadata.mcp` block stamped onto every discovered/bound tool.
+ * Shared by auto-discovery (`toServerTools`) and the explicit `tools(defs)`
+ * path in `client.ts` so the two cannot drift.
+ *
+ * `annotations` is the server's own object, forwarded verbatim. Per the MCP
+ * spec its fields (including `title`) are **hints** — a host may use them for
+ * display or to shape an approval UI, but never as a security boundary.
+ *
+ * Fields the server didn't declare are OMITTED rather than set to `undefined`:
+ * the explicit path merges this over any `mcp` block the caller already put on
+ * their tool definition, and an `undefined` value would blank out what they set.
+ */
+export function toolMcpMetadata(
+  def: McpToolDef,
+  serverId: string | undefined,
+): McpToolMetadata {
+  const uiResourceUri = extractUiResourceUri(def)
+  const annotations: ToolAnnotations | undefined = def.annotations
+  return {
+    serverToolName: def.name,
+    serverId,
+    title: toolDisplayTitle(def),
+    ...(uiResourceUri !== undefined ? { uiResourceUri } : {}),
+    ...(annotations !== undefined ? { annotations } : {}),
+  }
+}
+
 export function mcpContentToTanstack(
   content: Array<any>,
 ): string | Array<ContentPart> {
+  // A valid MCP result may carry only structuredContent (no content[]) → guard
+  // against undefined/non-array before reading length/map.
+  if (!Array.isArray(content)) return ''
   // Single text block → plain string (most common, best for the model).
   if (content.length === 1 && content[0]?.type === 'text')
     return content[0].text
-  return content.map((c): ContentPart => {
-    switch (c.type) {
-      case 'text':
-        return { type: 'text', content: c.text }
-      case 'image':
-        return {
-          type: 'image',
-          source: { type: 'data', value: c.data, mimeType: c.mimeType },
+  const parts = content
+    .map((c): ContentPart => {
+      switch (c.type) {
+        case 'text':
+          return { type: 'text', content: c.text }
+        case 'image':
+          return {
+            type: 'image',
+            source: { type: 'data', value: c.data, mimeType: c.mimeType },
+          }
+        case 'resource': {
+          const uri = c.resource?.uri
+          if (typeof uri === 'string' && uri.startsWith('ui://')) {
+            // ui:// resources are surfaced via readResource (MCP Apps); omit from model text.
+            return { type: 'text', content: '' }
+          }
+          return { type: 'text', content: JSON.stringify(c.resource) }
         }
-      case 'resource':
-        return { type: 'text', content: JSON.stringify(c.resource) }
-      default:
-        return { type: 'text', content: JSON.stringify(c) }
-    }
-  })
+        default:
+          return { type: 'text', content: JSON.stringify(c) }
+      }
+    })
+    .filter((p) => !(p.type === 'text' && p.content === ''))
+  return parts.length ? parts : ''
 }
 
 /**
@@ -55,9 +115,16 @@ export function makeMcpExecute(
       const text = Array.isArray(result.content)
         ? mcpContentToTanstack(result.content)
         : undefined
-      const detail = typeof text === 'string' ? text : JSON.stringify(text)
+      const detail =
+        typeof text === 'string'
+          ? text
+          : text === undefined
+            ? undefined
+            : JSON.stringify(text)
+      // An empty/absent detail (e.g. a ui://-only error body) would render a
+      // dangling colon — fall back to the bare message.
       throw new Error(
-        text === undefined
+        !detail
           ? `MCP tool "${mcpName}" returned an error`
           : `MCP tool "${mcpName}" returned an error: ${detail}`,
       )
@@ -88,12 +155,12 @@ export function toServerTools(
   client: Client,
   defs: Array<McpToolDef>,
   options: ConvertOptions,
-): Array<ServerTool> {
+): Array<McpServerTool> {
   return defs
     .filter((def) => !requiresTaskExecution(def))
     .map((def) => {
       const name = options.prefix ? `${options.prefix}_${def.name}` : def.name
-      const tool: ServerTool = {
+      const tool: McpServerTool = {
         __toolSide: 'server',
         name,
         description: def.description ?? '',
@@ -103,7 +170,9 @@ export function toServerTools(
         },
         ...(def.outputSchema ? { outputSchema: def.outputSchema as any } : {}),
         ...(options.lazy ? { lazy: true } : {}),
-        metadata: { mcp: { serverToolName: def.name } },
+        metadata: {
+          mcp: toolMcpMetadata(def, options.prefix),
+        },
         execute: makeMcpExecute(client, def.name, Boolean(def.outputSchema)),
       }
       return tool

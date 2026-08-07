@@ -1,5 +1,97 @@
 # @tanstack/ai-groq
 
+## 0.5.4
+
+### Patch Changes
+
+- Updated dependencies [[`7499171`](https://github.com/TanStack/ai/commit/74991716aea4d90a5d0363676a1e3349689a48e8)]:
+  - @tanstack/ai@0.43.0
+  - @tanstack/ai-utils@0.4.0
+  - @tanstack/openai-base@0.9.10
+
+## 0.5.3
+
+### Patch Changes
+
+- Updated dependencies [[`3e1b510`](https://github.com/TanStack/ai/commit/3e1b510e4fdd2334af468c47b7c37b572805200e)]:
+  - @tanstack/ai@0.42.0
+  - @tanstack/openai-base@0.9.9
+
+## 0.5.2
+
+### Patch Changes
+
+- [#924](https://github.com/TanStack/ai/pull/924) [`5fcaf90`](https://github.com/TanStack/ai/commit/5fcaf90dc82bc20b8c7a75faa3c129da04858af5) - fix: resolve directory-barrel imports in published `.d.ts` files. Bare imports of `utils`/`tools`/`middleware` barrels were emitted as `../utils.js` (etc.), which do not resolve under bundler/node16/nodenext (no `/index` fallback for explicit `.js`). With consumer `skipLibCheck: true` those symbols silently became `any`. Imports now target concrete modules (e.g. `utils/client`, `middleware/types`) or explicit `/index` paths so public types resolve correctly.
+
+- [#922](https://github.com/TanStack/ai/pull/922) [`e0bbbdd`](https://github.com/TanStack/ai/commit/e0bbbdd9608892293e09135aab4a3c77c8d65669) - fix: resolve dangling relative imports in published declaration files
+
+  Switch directory-barrel imports (`../utils`, `../tools`, `../middleware`) to
+  concrete module paths so emitted `.d.ts` specifiers resolve under
+  `bundler`/`node16`/`nodenext` resolution. Adds a `test:dts` scanner guardrail.
+
+  Fixes [#920](https://github.com/TanStack/ai/issues/920)
+
+- Updated dependencies [[`fbfd4be`](https://github.com/TanStack/ai/commit/fbfd4be3dda591303725664a802e0efbced0d22b), [`5fcaf90`](https://github.com/TanStack/ai/commit/5fcaf90dc82bc20b8c7a75faa3c129da04858af5), [`2665085`](https://github.com/TanStack/ai/commit/2665085970ab4d792778bb2b635ef27fbdcb6be1), [`e0bbbdd`](https://github.com/TanStack/ai/commit/e0bbbdd9608892293e09135aab4a3c77c8d65669), [`f830d9e`](https://github.com/TanStack/ai/commit/f830d9e7a41e3554c424c3e41ba847dfd1577589), [`f830d9e`](https://github.com/TanStack/ai/commit/f830d9e7a41e3554c424c3e41ba847dfd1577589), [`de5fbb5`](https://github.com/TanStack/ai/commit/de5fbb52a916826cdc0ef31d18df402cd611b9d4)]:
+  - @tanstack/openai-base@0.9.8
+  - @tanstack/ai@0.41.0
+
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [[`5deda27`](https://github.com/TanStack/ai/commit/5deda27085c8785894a28feb5bb3655dbd8f7e0a)]:
+  - @tanstack/ai@0.40.0
+  - @tanstack/openai-base@0.9.7
+
+## 0.5.0
+
+### Minor Changes
+
+- [#649](https://github.com/TanStack/ai/pull/649) [`011ef69`](https://github.com/TanStack/ai/commit/011ef69b0119713f790c65bc65a34293f5d06716) - Adds Groq as a transcription provider. Groq's API is mostly OpenAI SDK-compatible,
+  but its transcription endpoint additionally accepts HTTP URLs as input, so this
+  is implemented as a custom integration rather than going through the SDK.
+
+- [#346](https://github.com/TanStack/ai/pull/346) [`b3464cb`](https://github.com/TanStack/ai/commit/b3464cb5919ef7fdce41bc71144a43ac23a8d554) - Add tree-shakeable Text-to-Speech (TTS) adapter for Groq with English and Arabic Orpheus voices, multiple output formats (default WAV), configurable speed and sample rate, model metadata, and unit tests.
+
+## 0.4.16
+
+### Patch Changes
+
+- Updated dependencies [[`b628a4d`](https://github.com/TanStack/ai/commit/b628a4da5fd21184922c6944059768d1ed6071d4), [`b628a4d`](https://github.com/TanStack/ai/commit/b628a4da5fd21184922c6944059768d1ed6071d4)]:
+  - @tanstack/ai@0.39.0
+  - @tanstack/openai-base@0.9.6
+
+## 0.4.15
+
+### Patch Changes
+
+- Updated dependencies [[`c1a8732`](https://github.com/TanStack/ai/commit/c1a87327b4a3463d37158f32ca90184b5fd092bb)]:
+  - @tanstack/ai@0.38.0
+  - @tanstack/openai-base@0.9.5
+
+## 0.4.14
+
+### Patch Changes
+
+- [#844](https://github.com/TanStack/ai/pull/844) [`a6cceba`](https://github.com/TanStack/ai/commit/a6cceba4812e7e986183ee856112fcf5f8fa12ff) - Republish all packages with their compiled `dist/` output.
+
+  Releases `0.33.0`–`0.36.0` were published without a `dist/` directory: the
+  release workflow relied on an Nx-cached `build` whose outputs were not
+  materialized to disk before `changeset publish` packed the tarballs, and
+  `files: ["dist"]` silently includes nothing when `dist/` is absent. The
+  published packages therefore contained only `src/`, so every export
+  (`./dist/esm/*.js`) resolved to a missing file and the packages were
+  uninstallable.
+
+  The publish step now runs a fresh, cache-bypassing build of all packages
+  immediately before publishing, guaranteeing compiled artifacts are present in
+  every tarball.
+
+- Updated dependencies [[`a6cceba`](https://github.com/TanStack/ai/commit/a6cceba4812e7e986183ee856112fcf5f8fa12ff)]:
+  - @tanstack/ai@0.37.0
+  - @tanstack/ai-utils@0.3.1
+  - @tanstack/openai-base@0.9.4
+
 ## 0.4.13
 
 ### Patch Changes

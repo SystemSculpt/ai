@@ -1,5 +1,89 @@
 # @tanstack/ai-vue-ui
 
+## 0.2.36
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @tanstack/ai-vue@0.16.1
+
+## 0.2.35
+
+### Patch Changes
+
+- Updated dependencies [[`7499171`](https://github.com/TanStack/ai/commit/74991716aea4d90a5d0363676a1e3349689a48e8)]:
+  - @tanstack/ai-vue@0.16.0
+
+## 0.2.34
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @tanstack/ai-vue@0.15.1
+
+## 0.2.33
+
+### Patch Changes
+
+- Updated dependencies [[`35946e3`](https://github.com/TanStack/ai/commit/35946e3c39fb123c133ebe662f8e2cf0139f2b8c)]:
+  - @tanstack/ai-vue@0.15.0
+
+## 0.2.32
+
+### Patch Changes
+
+- Updated dependencies [[`f830d9e`](https://github.com/TanStack/ai/commit/f830d9e7a41e3554c424c3e41ba847dfd1577589)]:
+  - @tanstack/ai-vue@0.14.4
+
+## 0.2.31
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @tanstack/ai-vue@0.14.3
+
+## 0.2.30
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @tanstack/ai-vue@0.14.2
+
+## 0.2.29
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @tanstack/ai-vue@0.14.1
+
+## 0.2.28
+
+### Patch Changes
+
+- Updated dependencies [[`33acdd4`](https://github.com/TanStack/ai/commit/33acdd4df4aef13d594700d9b52087252091bd40), [`c22c663`](https://github.com/TanStack/ai/commit/c22c6632fdca761033cb9c4273bf61fc8ce86662)]:
+  - @tanstack/ai-vue@0.14.0
+
+## 0.2.27
+
+### Patch Changes
+
+- [#844](https://github.com/TanStack/ai/pull/844) [`a6cceba`](https://github.com/TanStack/ai/commit/a6cceba4812e7e986183ee856112fcf5f8fa12ff) - Republish all packages with their compiled `dist/` output.
+
+  Releases `0.33.0`–`0.36.0` were published without a `dist/` directory: the
+  release workflow relied on an Nx-cached `build` whose outputs were not
+  materialized to disk before `changeset publish` packed the tarballs, and
+  `files: ["dist"]` silently includes nothing when `dist/` is absent. The
+  published packages therefore contained only `src/`, so every export
+  (`./dist/esm/*.js`) resolved to a missing file and the packages were
+  uninstallable.
+
+  The publish step now runs a fresh, cache-bypassing build of all packages
+  immediately before publishing, guaranteeing compiled artifacts are present in
+  every tarball.
+
+- Updated dependencies [[`a6cceba`](https://github.com/TanStack/ai/commit/a6cceba4812e7e986183ee856112fcf5f8fa12ff)]:
+  - @tanstack/ai-vue@0.13.15
+
 ## 0.2.26
 
 ### Patch Changes
