@@ -72,7 +72,19 @@ async function createInterruptedClient(continuation: Script) {
         timestamp: Date.now(),
         outcome: {
           type: 'interrupt',
-          interrupts: [{ id: 'interrupt-1', reason: 'client_tool_input' }],
+          // Full legacy approval metadata (kind + toolName + input) hydrates as
+          // a public generic interrupt so resolveInterrupt() can drive resume.
+          interrupts: [
+            {
+              id: 'interrupt-1',
+              reason: 'approval_required',
+              metadata: {
+                kind: 'approval',
+                toolName: 'confirm',
+                input: {},
+              },
+            },
+          ],
         },
       },
     ],
@@ -160,6 +172,41 @@ describe('ChatClient resume', () => {
       createdAt: new Date(),
     })
     expect(client.getResumeState()).toBeNull()
+  })
+
+  it('reports the current run id for an ordinary run and clears it on finish', async () => {
+    const seen: Array<string | null> = []
+    const { adapter, contexts } = recordingAdapter([
+      (ctx) => [
+        runStarted,
+        text('a'),
+        {
+          type: EventType.RUN_FINISHED,
+          runId: ctx?.runId ?? 'run-1',
+          threadId: 'thread-1',
+          timestamp: Date.now(),
+          finishReason: 'stop',
+        },
+      ],
+    ])
+    const client = new ChatClient({
+      connection: adapter,
+      onRunIdChange: (runId) => seen.push(runId),
+    })
+    expect(client.getCurrentRunId()).toBeNull()
+
+    await client.append({
+      id: 'u1',
+      role: 'user',
+      parts: [{ type: 'text', content: 'hi' }],
+      createdAt: new Date(),
+    })
+
+    // A run with no interrupt leaves no resume state, but its id was still
+    // reported while it was in flight, then cleared when it settled.
+    expect(client.getResumeState()).toBeNull()
+    expect(client.getCurrentRunId()).toBeNull()
+    expect(seen).toEqual([contexts[0]?.runId, null])
   })
 
   it('preserves resume state and tracks pending interrupts on interrupt terminal', async () => {
@@ -317,7 +364,7 @@ describe('ChatClient resume', () => {
     expect(client.getPendingInterrupts()).toEqual([])
   })
 
-  it.skip('correlates a synthesized resume finish to the client request run', async () => {
+  it('correlates a synthesized resume finish to the client request run', async () => {
     const client = await createInterruptedClient([
       {
         type: EventType.RUN_STARTED,
@@ -329,12 +376,16 @@ describe('ChatClient resume', () => {
 
     resolveGenericInterrupt(client)
 
-    await vi.waitFor(() => expect(client.getInterrupts()).toEqual([]))
-    expect(client.getResumeState()).toBeNull()
-    expect(client.getSessionGenerating()).toBe(false)
+    // Wait for the full settle — interrupts are hidden while status is
+    // `submitting`, so an empty list alone is not a terminal signal.
+    await vi.waitFor(() => {
+      expect(client.getInterrupts()).toEqual([])
+      expect(client.getResumeState()).toBeNull()
+      expect(client.getSessionGenerating()).toBe(false)
+    })
   })
 
-  it.skip('correlates a synthesized resume error to the client request run', async () => {
+  it('correlates a synthesized resume error to the client request run', async () => {
     const client = await createInterruptedClient({
       chunks: [
         {
@@ -349,11 +400,11 @@ describe('ChatClient resume', () => {
 
     resolveGenericInterrupt(client)
 
-    await vi.waitFor(() =>
-      expect(client.getInterrupts()[0]?.status).toBe('error'),
-    )
-    expect(client.getResumeState()).not.toBeNull()
-    expect(client.getSessionGenerating()).toBe(false)
+    await vi.waitFor(() => {
+      expect(client.getInterrupts()[0]?.status).toBe('error')
+      expect(client.getResumeState()).not.toBeNull()
+      expect(client.getSessionGenerating()).toBe(false)
+    })
   })
 
   it('resumeInterrupts reconnects with the full current message history', async () => {

@@ -39,8 +39,12 @@ export function useChat<
 >(
   options: UseChatOptions<TTools, TSchema, TContext>,
 ): UseChatReturn<TTools, TSchema> {
+  // The hook's identity is its `threadId` — also the persistence key, so a
+  // reload with the same `threadId` restores the same conversation. `hookId` is
+  // only a stable fallback for React's client-recreation keying when no
+  // `threadId` is given (an ephemeral chat), never a persistence key.
   const hookId = useId()
-  const clientId = options.id || hookId
+  const clientId = options.threadId ?? hookId
 
   const [messages, setMessages] = useState<Array<UIMessage<TTools>>>(
     options.initialMessages || [],
@@ -53,9 +57,7 @@ export function useChat<
     useState<ConnectionStatus>('disconnected')
   const [sessionGenerating, setSessionGenerating] = useState(false)
   const [queue, setQueue] = useState<Array<QueuedMessage>>([])
-  const [resumeState, setResumeState] = useState<ChatResumeState | null>(
-    options.initialResumeSnapshot?.resumeState ?? null,
-  )
+  const [runId, setRunId] = useState<string | null>(null)
   const [interruptState, setInterruptState] = useState<
     ChatInterruptState<TTools>
   >(() => ({
@@ -73,6 +75,7 @@ export function useChat<
     options.initialMessages || [],
   )
   const isFirstMountRef = useRef(true)
+  const subscribedRef = useRef(false)
   const activeClientRef = useRef<ChatClient | null>(null)
   const cleanupInvalidationRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -91,7 +94,7 @@ export function useChat<
 
   const syncResumeState = useCallback((target: ChatClient | null) => {
     if (!target) return
-    setResumeState(target.getResumeState())
+    setRunId(target.getCurrentRunId())
     setInterruptState(target.getInterruptState())
   }, [])
 
@@ -123,7 +126,6 @@ export function useChat<
     const instance = new ChatClient<TTools, TContext>({
       devtoolsBridgeFactory: createChatDevtoolsBridge,
       ...transport,
-      id: clientId,
       initialMessages: messagesToUse,
       ...(initialOptions.body !== undefined && { body: initialOptions.body }),
       ...(initialOptions.threadId !== undefined && {
@@ -215,9 +217,12 @@ export function useChat<
         if (activeClientRef.current !== instance) return
         setQueue(nextQueue)
       },
-      onResumeStateChange: (nextResumeState, nextPendingInterrupts) => {
+      onRunIdChange: (nextRunId) => {
         if (!getActiveInstance()) return
-        setResumeState(nextResumeState)
+        setRunId(nextRunId)
+      },
+      onResumeStateChange: (_nextResumeState, nextPendingInterrupts) => {
+        if (!getActiveInstance()) return
         setInterruptState((current) => ({
           ...current,
           interrupts: nextPendingInterrupts,
@@ -279,10 +284,39 @@ export function useChat<
   useEffect(() => {
     if (options.live) {
       client.subscribe()
-    } else {
+      subscribedRef.current = true
+    } else if (subscribedRef.current) {
+      // Only tear down a subscription we actually started. Calling
+      // `unsubscribe()` on initial mount (when `live` was never enabled) would
+      // abort an in-flight delivery resume — `resumeInFlightRun` is kicked off
+      // in the client constructor, and `unsubscribe()` cancels the shared
+      // in-flight stream — so a mid-stream reload would drop its rejoin before
+      // it delivers a single chunk. This is exactly why a reload froze instead
+      // of continuing.
       client.unsubscribe()
+      subscribedRef.current = false
     }
   }, [client, options.live])
+
+  // ONLY THE VIEW ON SCREEN HOLDS A STREAM.
+  //
+  // A page can own many chats — 40 sandboxes, 40 conversations — and a browser
+  // allows only ~6 connections per origin. One long-lived stream per chat reaches
+  // that ceiling after a handful of views, and every request after it QUEUES:
+  // measured, an in-page fetch took over two minutes while the same request from
+  // outside the browser took 17ms. So the connection follows the view.
+  //
+  // Immediate, not deferred: the deferred teardown below can be skipped when the
+  // same client remounts, which is right for disposal but useless for a
+  // connection. `attach` is idempotent and `detach` keeps the transcript and the
+  // resume pointer, so a Strict Mode remount is just detach-then-attach and the
+  // run is picked straight back up from the durable log.
+  useEffect(() => {
+    client.attach()
+    return () => {
+      client.detach()
+    }
+  }, [client])
 
   useEffect(() => {
     if (cleanupDisposalRef.current?.client === client) {
@@ -307,18 +341,22 @@ export function useChat<
         }
         cleanupInvalidationRef.current = null
       }, 0)
-      // Subscribe/unsubscribe on `options.live` is owned by the dedicated
-      // effect above. This cleanup only fires on unmount or client swap,
-      // so read `live` through the ref to avoid disposing the client every
-      // time `live` toggles.
-      if (optionsRef.current.live) {
-        client.unsubscribe()
-      } else {
-        client.stop()
-      }
+      // Soft cleanup only: do NOT stop/unsubscribe here. React Strict Mode
+      // remounts fire this cleanup then re-attach the same client one tick
+      // later; calling `stop()` would abort a constructor rejoin
+      // (`resumeInFlightRun`) and can wipe the durable resume pointer before
+      // the first chunk. Real teardown lives in the deferred dispose path
+      // below, which only runs when the client is not remounted.
+      // Subscribe/unsubscribe on `options.live` is still owned by the
+      // dedicated effect above for live toggles.
       const disposal = {
         client,
         timeout: setTimeout(() => {
+          if (optionsRef.current.live) {
+            client.unsubscribe()
+          } else {
+            client.stop()
+          }
           client.dispose()
           if (cleanupDisposalRef.current === disposal) {
             cleanupDisposalRef.current = null
@@ -512,7 +550,7 @@ export function useChat<
     addToolApprovalResponse,
     queue,
     cancelQueued,
-    resumeState,
+    runId,
     interrupts: interruptState.interrupts,
     pendingInterrupts: interruptState.pendingInterrupts,
     interruptErrors: interruptState.interruptErrors,

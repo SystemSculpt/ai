@@ -68,11 +68,6 @@ export function createChat<
 >(
   options: CreateChatOptions<TTools, TSchema, TContext>,
 ): CreateChatReturn<TTools, TSchema, TContext> {
-  // Generate a unique ID for this chat instance
-  const clientId =
-    options.id ||
-    `chat-${Date.now()}-${Math.random().toString(36).substring(7)}`
-
   // Create reactive state using Svelte 5 runes
   let messages = $state<Array<UIMessage<TTools>>>(options.initialMessages || [])
   let isLoading = $state(false)
@@ -82,9 +77,7 @@ export function createChat<
   let connectionStatus = $state<ConnectionStatus>('disconnected')
   let sessionGenerating = $state(false)
   let queue = $state<Array<QueuedMessage>>([])
-  let resumeState = $state<ChatResumeState | null>(
-    options.initialResumeSnapshot?.resumeState ?? null,
-  )
+  let runId = $state<string | null>(null)
   let interruptState = $state.raw<ChatInterruptState<TTools>>({
     interrupts: EMPTY_INTERRUPTS,
     pendingInterrupts: EMPTY_INTERRUPTS,
@@ -113,10 +106,12 @@ export function createChat<
     ? { connection: options.connection }
     : { fetcher: options.fetcher }
 
+  // The hook's identity is its `threadId`, which ChatClient also uses as the
+  // persistence key — no separate `id`. When no `threadId` is given the client
+  // generates one, so an ephemeral chat still works but is not restored on reload.
   const client = new ChatClient<TTools, TContext>({
     devtoolsBridgeFactory: createChatDevtoolsBridge,
     ...transport,
-    id: clientId,
     ...(options.initialMessages !== undefined && {
       initialMessages: options.initialMessages,
     }),
@@ -181,8 +176,8 @@ export function createChat<
     onQueueChange: (nextQueue: Array<QueuedMessage>) => {
       queue = nextQueue
     },
-    onResumeStateChange: (nextResumeState) => {
-      resumeState = nextResumeState
+    onRunIdChange: (nextRunId) => {
+      runId = nextRunId
     },
     onInterruptStateChange: (nextInterruptState) => {
       interruptState = nextInterruptState
@@ -191,7 +186,7 @@ export function createChat<
   })
 
   function syncResumeState() {
-    resumeState = client.getResumeState()
+    runId = client.getCurrentRunId()
     interruptState = client.getInterruptState()
   }
 
@@ -211,16 +206,28 @@ export function createChat<
         // connection adapter reattaches via the browser's native
         // Last-Event-ID on reconnect. We only seed interrupt (state) resume.
         syncResumeState()
+        client.attach()
+        // ONLY THE VIEW ON SCREEN HOLDS A STREAM. `onMount`'s returned function
+        // runs when the component is destroyed, which is the one automatic
+        // teardown Svelte gives us here — and it is enough, because a connection
+        // is all that must go. A page can own many chats and a browser allows
+        // only ~6 connections per origin, so one long-lived stream per chat
+        // starves every other request once a few views have been open.
+        //
+        // `detach` keeps the transcript and the resume pointer, so re-entering
+        // the view picks the run back up from the durable log.
+        return () => {
+          client.detach()
+        }
       })
     } catch {
       // Svelte lifecycle hooks are only valid during component initialization.
     }
   }
 
-  // Note: Cleanup is handled by calling stop() directly when needed.
-  // Unlike React/Vue/Solid, Svelte 5 runes like $effect can only be used
-  // during component initialization, so we don't add automatic cleanup here.
-  // Users should call chat.stop() in their component's cleanup if needed.
+  // Note: `dispose()` remains manual — it releases devtools and marks the client
+  // dead, which only the owner can decide. The CONNECTION is released
+  // automatically by the `onMount` teardown above.
 
   // Define methods
   const sendMessage = async (
@@ -401,8 +408,8 @@ export function createChat<
     get queue() {
       return queue
     },
-    get resumeState() {
-      return resumeState
+    get runId() {
+      return runId
     },
     get interrupts() {
       return interruptState.interrupts
