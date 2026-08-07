@@ -59,6 +59,7 @@ import { Route as ApiImageRouteImport } from './routes/api.image'
 import { Route as ApiGenerationPersistenceServerRouteImport } from './routes/api.generation-persistence-server'
 import { Route as ApiGenerationPersistenceResumeRouteImport } from './routes/api.generation-persistence-resume'
 import { Route as ApiForeignInterruptRouteImport } from './routes/api.foreign-interrupt'
+import { Route as ApiFileSourceWireRouteImport } from './routes/api.file-source-wire'
 import { Route as ApiDurableTakeoverRouteImport } from './routes/api.durable-takeover'
 import { Route as ApiDurableDeliveryRouteImport } from './routes/api.durable-delivery'
 import { Route as ApiDevtoolsMemoryRouteImport } from './routes/api.devtools-memory'
@@ -334,6 +335,11 @@ const ApiForeignInterruptRoute = ApiForeignInterruptRouteImport.update({
   path: '/api/foreign-interrupt',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiFileSourceWireRoute = ApiFileSourceWireRouteImport.update({
+  id: '/api/file-source-wire',
+  path: '/api/file-source-wire',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDurableTakeoverRoute = ApiDurableTakeoverRouteImport.update({
   id: '/api/durable-takeover',
   path: '/api/durable-takeover',
@@ -439,6 +445,7 @@ export interface FileRoutesByFullPath {
   '/api/devtools-memory': typeof ApiDevtoolsMemoryRoute
   '/api/durable-delivery': typeof ApiDurableDeliveryRoute
   '/api/durable-takeover': typeof ApiDurableTakeoverRoute
+  '/api/file-source-wire': typeof ApiFileSourceWireRoute
   '/api/foreign-interrupt': typeof ApiForeignInterruptRoute
   '/api/generation-persistence-resume': typeof ApiGenerationPersistenceResumeRoute
   '/api/generation-persistence-server': typeof ApiGenerationPersistenceServerRoute
@@ -506,6 +513,7 @@ export interface FileRoutesByTo {
   '/api/devtools-memory': typeof ApiDevtoolsMemoryRoute
   '/api/durable-delivery': typeof ApiDurableDeliveryRoute
   '/api/durable-takeover': typeof ApiDurableTakeoverRoute
+  '/api/file-source-wire': typeof ApiFileSourceWireRoute
   '/api/foreign-interrupt': typeof ApiForeignInterruptRoute
   '/api/generation-persistence-resume': typeof ApiGenerationPersistenceResumeRoute
   '/api/generation-persistence-server': typeof ApiGenerationPersistenceServerRoute
@@ -574,6 +582,7 @@ export interface FileRoutesById {
   '/api/devtools-memory': typeof ApiDevtoolsMemoryRoute
   '/api/durable-delivery': typeof ApiDurableDeliveryRoute
   '/api/durable-takeover': typeof ApiDurableTakeoverRoute
+  '/api/file-source-wire': typeof ApiFileSourceWireRoute
   '/api/foreign-interrupt': typeof ApiForeignInterruptRoute
   '/api/generation-persistence-resume': typeof ApiGenerationPersistenceResumeRoute
   '/api/generation-persistence-server': typeof ApiGenerationPersistenceServerRoute
@@ -643,6 +652,7 @@ export interface FileRouteTypes {
     | '/api/devtools-memory'
     | '/api/durable-delivery'
     | '/api/durable-takeover'
+    | '/api/file-source-wire'
     | '/api/foreign-interrupt'
     | '/api/generation-persistence-resume'
     | '/api/generation-persistence-server'
@@ -710,6 +720,7 @@ export interface FileRouteTypes {
     | '/api/devtools-memory'
     | '/api/durable-delivery'
     | '/api/durable-takeover'
+    | '/api/file-source-wire'
     | '/api/foreign-interrupt'
     | '/api/generation-persistence-resume'
     | '/api/generation-persistence-server'
@@ -777,6 +788,7 @@ export interface FileRouteTypes {
     | '/api/devtools-memory'
     | '/api/durable-delivery'
     | '/api/durable-takeover'
+    | '/api/file-source-wire'
     | '/api/foreign-interrupt'
     | '/api/generation-persistence-resume'
     | '/api/generation-persistence-server'
@@ -845,6 +857,7 @@ export interface RootRouteChildren {
   ApiDevtoolsMemoryRoute: typeof ApiDevtoolsMemoryRoute
   ApiDurableDeliveryRoute: typeof ApiDurableDeliveryRoute
   ApiDurableTakeoverRoute: typeof ApiDurableTakeoverRoute
+  ApiFileSourceWireRoute: typeof ApiFileSourceWireRoute
   ApiForeignInterruptRoute: typeof ApiForeignInterruptRoute
   ApiGenerationPersistenceResumeRoute: typeof ApiGenerationPersistenceResumeRoute
   ApiGenerationPersistenceServerRoute: typeof ApiGenerationPersistenceServerRoute
@@ -1232,6 +1245,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiForeignInterruptRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/file-source-wire': {
+      id: '/api/file-source-wire'
+      path: '/api/file-source-wire'
+      fullPath: '/api/file-source-wire'
+      preLoaderRoute: typeof ApiFileSourceWireRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/durable-takeover': {
       id: '/api/durable-takeover'
       path: '/api/durable-takeover'
@@ -1426,6 +1446,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDevtoolsMemoryRoute: ApiDevtoolsMemoryRoute,
   ApiDurableDeliveryRoute: ApiDurableDeliveryRoute,
   ApiDurableTakeoverRoute: ApiDurableTakeoverRoute,
+  ApiFileSourceWireRoute: ApiFileSourceWireRoute,
   ApiForeignInterruptRoute: ApiForeignInterruptRoute,
   ApiGenerationPersistenceResumeRoute: ApiGenerationPersistenceResumeRoute,
   ApiGenerationPersistenceServerRoute: ApiGenerationPersistenceServerRoute,
