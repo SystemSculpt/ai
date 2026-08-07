@@ -17,6 +17,7 @@ import {
   runGenerationUsage,
 } from '../middleware/run'
 import { resolveMediaPrompt } from '../../utilities/media-prompt'
+import { assertPromptFileSourceSupport } from '../../utilities/content-source'
 import type { InternalLogger } from '../../logger/internal-logger'
 import type { DebugOption } from '../../logger/types'
 import type { GenerationMiddleware } from '../middleware/types'
@@ -280,6 +281,10 @@ async function runGenerateImage<
   })
 
   await runGenerationStart(middleware, mwCtx)
+
+  // Fail closed on `{ type: 'file' }` sources for adapters that haven't
+  // declared support (see assertPromptFileSourceSupport).
+  assertPromptFileSourceSupport(adapter, rest.prompt)
 
   // Devtools events carry the flattened prompt text plus media-part counts —
   // the wire payload stays `prompt: string` regardless of the prompt shape.

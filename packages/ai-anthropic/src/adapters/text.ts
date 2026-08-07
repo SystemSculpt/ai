@@ -1,6 +1,6 @@
 import {
   EventType,
-  assertOwnFileSource,
+  fileReferenceFor,
   isFileSource,
   normalizeSystemPrompts,
 } from '@tanstack/ai'
@@ -293,6 +293,8 @@ export class AnthropicTextAdapter<
 > {
   override readonly kind = 'text' as const
   readonly name = 'anthropic' as const
+  // Consumes `file_id` sources issued by anthropicFiles() (Files API beta).
+  override readonly supportsFileSources = true
 
   private readonly client: Anthropic_SDK
 
@@ -668,8 +670,10 @@ export class AnthropicTextAdapter<
           | BetaURLImageSource
           | BetaFileImageSource
         if (isFileSource(part.source)) {
-          assertOwnFileSource(part.source, this.name)
-          imageSource = { type: 'file', file_id: part.source.value }
+          imageSource = {
+            type: 'file',
+            file_id: fileReferenceFor(part.source, this.name),
+          }
         } else if (part.source.type === 'data') {
           imageSource = {
             type: 'base64',
@@ -699,8 +703,10 @@ export class AnthropicTextAdapter<
           | BetaURLPDFSource
           | BetaFileDocumentSource
         if (isFileSource(part.source)) {
-          assertOwnFileSource(part.source, this.name)
-          docSource = { type: 'file', file_id: part.source.value }
+          docSource = {
+            type: 'file',
+            file_id: fileReferenceFor(part.source, this.name),
+          }
         } else if (part.source.type === 'data') {
           docSource = {
             type: 'base64',
