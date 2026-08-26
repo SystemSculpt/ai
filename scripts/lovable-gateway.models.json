@@ -12,15 +12,8 @@
     "max_tokens": 65536,
     "knowledge": "2025-01",
     "modalities": {
-      "input": [
-        "text",
-        "image",
-        "audio",
-        "video"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text", "image", "audio", "video"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
@@ -136,15 +129,8 @@
     "max_tokens": 65536,
     "knowledge": "2025-01",
     "modalities": {
-      "input": [
-        "text",
-        "image",
-        "video"
-      ],
-      "output": [
-        "text",
-        "image"
-      ]
+      "input": ["text", "image", "video"],
+      "output": ["text", "image"]
     },
     "pricing": {
       "input": {
@@ -201,15 +187,8 @@
     "max_tokens": 65536,
     "knowledge": "2025-01",
     "modalities": {
-      "input": [
-        "text",
-        "image",
-        "audio",
-        "video"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text", "image", "audio", "video"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
@@ -324,12 +303,8 @@
     "context_window": 8192,
     "max_tokens": 16384,
     "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "audio"
-      ]
+      "input": ["text"],
+      "output": ["audio"]
     },
     "pricing": {
       "input": {
@@ -367,12 +342,8 @@
     "max_tokens": 16384,
     "knowledge": "2025-01",
     "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "audio"
-      ]
+      "input": ["text"],
+      "output": ["audio"]
     },
     "pricing": {
       "input": {
@@ -410,15 +381,8 @@
     "max_tokens": 65536,
     "knowledge": "2025-01",
     "modalities": {
-      "input": [
-        "text",
-        "image",
-        "audio",
-        "video"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text", "image", "audio", "video"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
@@ -584,12 +548,8 @@
     "max_tokens": 16384,
     "knowledge": "2025-01",
     "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "audio"
-      ]
+      "input": ["text"],
+      "output": ["audio"]
     },
     "pricing": {
       "input": {
@@ -627,15 +587,8 @@
     "max_tokens": 65000,
     "knowledge": "2025-01",
     "modalities": {
-      "input": [
-        "text",
-        "image",
-        "audio",
-        "video"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text", "image", "audio", "video"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
@@ -751,15 +704,8 @@
     "max_tokens": 32768,
     "knowledge": "2025-01",
     "modalities": {
-      "input": [
-        "text",
-        "image",
-        "video"
-      ],
-      "output": [
-        "text",
-        "image"
-      ]
+      "input": ["text", "image", "video"],
+      "output": ["text", "image"]
     },
     "pricing": {
       "input": {
@@ -824,15 +770,8 @@
     "max_tokens": 32768,
     "knowledge": "2025-01",
     "modalities": {
-      "input": [
-        "text",
-        "image",
-        "video"
-      ],
-      "output": [
-        "text",
-        "image"
-      ]
+      "input": ["text", "image", "video"],
+      "output": ["text", "image"]
     },
     "pricing": {
       "input": {
@@ -897,15 +836,8 @@
     "max_tokens": 65000,
     "knowledge": "2025-01",
     "modalities": {
-      "input": [
-        "text",
-        "image",
-        "audio",
-        "video"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text", "image", "audio", "video"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
@@ -1020,15 +952,8 @@
     "context_window": 65536,
     "max_tokens": 4096,
     "modalities": {
-      "input": [
-        "text",
-        "image",
-        "video"
-      ],
-      "output": [
-        "text",
-        "image"
-      ]
+      "input": ["text", "image", "video"],
+      "output": ["text", "image"]
     },
     "pricing": {
       "input": {
@@ -1093,12 +1018,8 @@
     "max_tokens": 16384,
     "knowledge": "2025-01",
     "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "audio"
-      ]
+      "input": ["text"],
+      "output": ["audio"]
     },
     "pricing": {
       "input": {
@@ -1136,15 +1057,8 @@
     "max_tokens": 64000,
     "knowledge": "2025-01",
     "modalities": {
-      "input": [
-        "text",
-        "image",
-        "audio",
-        "video"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text", "image", "audio", "video"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
@@ -1310,15 +1224,8 @@
     "max_tokens": 64000,
     "knowledge": "2025-01",
     "modalities": {
-      "input": [
-        "text",
-        "image",
-        "audio",
-        "video"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text", "image", "audio", "video"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
@@ -1434,15 +1341,8 @@
     "max_tokens": 64000,
     "knowledge": "2026-03",
     "modalities": {
-      "input": [
-        "text",
-        "image",
-        "audio",
-        "video"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text", "image", "audio", "video"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
@@ -1558,12 +1458,8 @@
     "max_tokens": 0,
     "knowledge": "2025-05",
     "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
@@ -1591,15 +1487,8 @@
     "max_tokens": 0,
     "knowledge": "2025-11",
     "modalities": {
-      "input": [
-        "text",
-        "image",
-        "audio",
-        "video"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text", "image", "audio", "video"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
@@ -1650,13 +1539,8 @@
     "context_window": 0,
     "max_tokens": 0,
     "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "video"
-      ]
+      "input": ["text", "image"],
+      "output": ["video"]
     },
     "pricing": {
       "video_duration": {
@@ -1684,13 +1568,8 @@
     "context_window": 0,
     "max_tokens": 0,
     "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "video"
-      ]
+      "input": ["text", "image"],
+      "output": ["video"]
     },
     "pricing": {
       "video_duration": {
@@ -1718,13 +1597,8 @@
     "context_window": 0,
     "max_tokens": 0,
     "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "video"
-      ]
+      "input": ["text", "image"],
+      "output": ["video"]
     },
     "pricing": {
       "video_duration": {
@@ -1749,13 +1623,8 @@
     "context_window": 16000,
     "max_tokens": 2000,
     "modalities": {
-      "input": [
-        "text",
-        "audio"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text", "audio"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
@@ -1800,12 +1669,8 @@
     "context_window": 2000,
     "max_tokens": 0,
     "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "audio"
-      ]
+      "input": ["text"],
+      "output": ["audio"]
     },
     "pricing": {
       "input": {
@@ -1842,13 +1707,8 @@
     "context_window": 16000,
     "max_tokens": 2000,
     "modalities": {
-      "input": [
-        "text",
-        "audio"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text", "audio"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
@@ -1894,13 +1754,8 @@
     "max_tokens": 128000,
     "knowledge": "2024-09-30",
     "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text", "image"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
@@ -1984,13 +1839,8 @@
     "max_tokens": 128000,
     "knowledge": "2024-05-30",
     "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text", "image"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
@@ -2074,13 +1924,8 @@
     "max_tokens": 128000,
     "knowledge": "2024-05-30",
     "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text", "image"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
@@ -2129,13 +1974,8 @@
     "max_tokens": 128000,
     "knowledge": "2024-10",
     "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text", "image"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
@@ -2219,13 +2059,8 @@
     "max_tokens": 128000,
     "knowledge": "2025-08-31",
     "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text", "image"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
@@ -2324,13 +2159,8 @@
     "max_tokens": 128000,
     "knowledge": "2025-08-31",
     "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text", "image"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
@@ -2414,13 +2244,8 @@
     "max_tokens": 128000,
     "knowledge": "2025-08-31",
     "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text", "image"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
@@ -2469,13 +2294,8 @@
     "max_tokens": 128000,
     "knowledge": "2025-08-31",
     "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text", "image"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
@@ -2539,13 +2359,8 @@
     "max_tokens": 128000,
     "knowledge": "2025-12-01",
     "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text", "image"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
@@ -2644,13 +2459,8 @@
     "max_tokens": 128000,
     "knowledge": "2025-12-01",
     "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text", "image"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
@@ -2714,13 +2524,8 @@
     "max_tokens": 128000,
     "knowledge": "2026-02-16",
     "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text", "image"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
@@ -2819,13 +2624,8 @@
     "max_tokens": 128000,
     "knowledge": "2026-02-16",
     "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text", "image"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
@@ -2924,13 +2724,8 @@
     "max_tokens": 128000,
     "knowledge": "2026-02-16",
     "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text", "image"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
@@ -3028,13 +2823,8 @@
     "context_window": 0,
     "max_tokens": 0,
     "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "image"
-      ]
+      "input": ["text", "image"],
+      "output": ["image"]
     },
     "pricing": {
       "input": {
@@ -3079,13 +2869,8 @@
     "context_window": 0,
     "max_tokens": 0,
     "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "image"
-      ]
+      "input": ["text", "image"],
+      "output": ["image"]
     },
     "pricing": {
       "input": {
@@ -3130,12 +2915,8 @@
     "context_window": 8191,
     "max_tokens": 0,
     "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
@@ -3162,12 +2943,8 @@
     "context_window": 8191,
     "max_tokens": 0,
     "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
+      "input": ["text"],
+      "output": ["text"]
     },
     "pricing": {
       "input": {
