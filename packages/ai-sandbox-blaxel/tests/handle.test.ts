@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/require-await -- trivial fixed-value fakes */
 import { SandboxInstance } from '@blaxel/core'
-import { toLines } from '@tanstack/ai-sandbox'
+import { UnsupportedCapabilityError, toLines } from '@tanstack/ai-sandbox'
 import { spawn as spawnChild, spawnSync } from 'node:child_process'
 import { existsSync, readFileSync, rmSync } from 'node:fs'
 import { describe, expect, it, vi } from 'vitest'
@@ -245,6 +245,13 @@ describe('BlaxelHandle capabilities', () => {
     expect(handle.provider).toBe('blaxel')
     expect(handle.workspaceRoot).toBe('/workspace')
   })
+
+  // The contract says an unsupported optional method throws rather than being
+  // absent, so callers get a named capability error and not a TypeError.
+  it('throws UnsupportedCapabilityError for fork rather than being undefined', () => {
+    const { handle } = makeHandle()
+    expect(() => handle.fork?.()).toThrow(UnsupportedCapabilityError)
+  })
 })
 
 describe('BlaxelHandle filesystem', () => {
@@ -254,6 +261,15 @@ describe('BlaxelHandle filesystem', () => {
     expect(await handle.fs.readBytes('/workspace/a.txt')).toEqual(
       new TextEncoder().encode('hello'),
     )
+  })
+
+  it('creates the parent directory before writing a nested path', async () => {
+    const { handle, fake } = makeHandle()
+    await handle.fs.write('/workspace/.claude/skills/x/SKILL.md', 'body')
+    expect(fake.mkdir).toHaveBeenCalledWith('/workspace/.claude/skills/x')
+
+    await handle.fs.write('/workspace/bin', new Uint8Array([1, 2]))
+    expect(fake.mkdir).toHaveBeenLastCalledWith('/workspace')
   })
 
   it('lists directories before files and re-roots entries under the virtual path', async () => {
@@ -525,6 +541,38 @@ describe('BlaxelHandle process', () => {
     resolveWait({})
     await expect(spawned.wait()).resolves.toBe(143)
     await expect(spawned.kill()).resolves.toBeUndefined()
+  })
+
+  it('rejects wait() when the kill left the remote process running', async () => {
+    let resolveWait!: (value: BlaxelProcessLike) => void
+    const waitGate = new Promise<BlaxelProcessLike>((resolve) => {
+      resolveWait = resolve
+    })
+    // The named kill keeps failing with a non-404, so the process is still
+    // alive remotely — and still billing. That must not read as a clean 143.
+    const { handle } = makeHandle({
+      onExec: () => ({ pid: '1' }),
+      waitGate,
+      onKill: () => {
+        throw Object.assign(new Error('blaxel is down'), { status: 503 })
+      },
+    })
+    const spawned = await handle.process.spawn('sleep 30')
+    await expect(spawned.kill()).rejects.toThrow(/failed to fully terminate/)
+    resolveWait({})
+
+    // The regression this guards: wait() used to resolve 143 here, reporting a
+    // still-running remote process as a clean kill.
+    const outcome = await spawned.wait().then(
+      (exitCode) => ({ exitCode }),
+      (error: unknown) => ({ error }),
+    )
+    expect(outcome).not.toEqual({ exitCode: 143 })
+    const error = (outcome as { error: unknown }).error
+    expect(String(error)).toMatch(/remote cleanup also failed/)
+    expect((error as AggregateError).errors.map(String).join('\n')).toMatch(
+      /failed to fully terminate/,
+    )
   })
 
   it('cleans up when abort races ahead of process registration', async () => {
@@ -918,18 +966,20 @@ describe('BlaxelHandle process', () => {
   })
 
   it('reads authoritative output from the bounded remote capture', async () => {
+    // The live stream and the capture disagree; the capture is authoritative
+    // for anything the consumer has not already been handed. Streaming must go
+    // through `streamLines` — `spawn` passes no `onStdout` on the exec request,
+    // so driving it from `onExec` would assert nothing at all.
     const { handle } = makeHandle({
-      onExec: (request) => {
-        request.onStdout?.('streamed-only')
-        return { pid: '1' }
-      },
-      waitResult: { exitCode: 0, stdout: 'totally different' },
+      onExec: () => ({ pid: '1' }),
+      streamLines: [{ stream: 'stdout', line: 'streamed' }],
+      waitResult: { exitCode: 0, stdout: 'streamed and then some' },
     })
     const spawned = await handle.process.spawn('build')
     await spawned.wait()
     let text = ''
     for await (const chunk of spawned.stdout) text += chunk
-    expect(text).toBe('totally different')
+    expect(text).toBe('streamed and then some')
   })
 
   it('signals divergence after live output was already emitted', async () => {

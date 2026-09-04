@@ -11,7 +11,10 @@
  * fields, so no output demultiplexing is needed.
  */
 import { createHash, randomUUID } from 'node:crypto'
-import { createExecBackedGit } from '@tanstack/ai-sandbox'
+import {
+  UnsupportedCapabilityError,
+  createExecBackedGit,
+} from '@tanstack/ai-sandbox'
 import { abortable, errorStatus, isNotFound } from './utils'
 import type {
   ExecResult,
@@ -241,12 +244,18 @@ export class BlaxelHandle implements SandboxHandle {
         const blob = await this.sandbox.fs.readBinary(this.abs(p))
         return new Uint8Array(await blob.arrayBuffer())
       },
+      // Blaxel's PUT does not create missing parents, and callers write nested
+      // paths through this seam (bootstrapWorkspace writes `<root>/<skill.path>`).
+      // `mkdir` creates parents, so one extra native call keeps the contract.
       write: async (p, data) => {
+        const abs = this.abs(p)
+        const parent = abs.replace(/\/[^/]*$/, '') || '/'
+        await this.sandbox.fs.mkdir(parent)
         if (typeof data === 'string') {
-          await this.sandbox.fs.write(this.abs(p), data)
+          await this.sandbox.fs.write(abs, data)
           return
         }
-        await this.sandbox.fs.writeBinary(this.abs(p), data)
+        await this.sandbox.fs.writeBinary(abs, data)
       },
       list: async (p) => {
         const directory = await this.sandbox.fs.ls(this.abs(p))
@@ -960,7 +969,8 @@ export class BlaxelHandle implements SandboxHandle {
 
     // Fixed-size encoded records preserve delimiters and keep the SDK's own
     // line accumulator bounded; the raw capture keeps the authoritative total
-    // bounded. Cumulative process.wait/get is never materialized in host memory.
+    // bounded. Cumulative process.wait/get is never called, so host memory is
+    // capped at the per-stream limit rather than growing with total output.
     const terminal = logs
       .wait()
       .then(async () => {
@@ -970,8 +980,13 @@ export class BlaxelHandle implements SandboxHandle {
         // `kill()` reaps the process group (the supervisor's TERM trap exits
         // without writing `status`) and removes the capture directory, so the
         // files below no longer exist. Report the kill as an exit code rather
-        // than surfacing a misleading file-not-found from the cleanup.
-        if (killPromise !== undefined) return KILLED_EXIT_CODE
+        // than surfacing a misleading file-not-found from the cleanup — but
+        // only once the termination itself has succeeded. Awaiting it here is
+        // what turns a failed reap into a rejection instead of a clean 143.
+        if (killPromise !== undefined) {
+          await killPromise
+          return KILLED_EXIT_CODE
+        }
         const [finalStdout, finalStderr, statusText] = await Promise.all([
           this.readCapturedOutput(bounded.outputDir, 'stdout'),
           this.readCapturedOutput(bounded.outputDir, 'stderr'),
@@ -987,9 +1002,30 @@ export class BlaxelHandle implements SandboxHandle {
         stderr.finish(finalStderr)
         return exitCode
       })
-      .catch((error: unknown) => {
-        if (killPromise !== undefined && transportError === undefined) {
-          return KILLED_EXIT_CODE
+      .catch(async (error: unknown) => {
+        if (killPromise !== undefined) {
+          try {
+            // Settle the termination first. Only a kill that actually reaped
+            // the remote process may read as a clean 143 — otherwise the
+            // process is still running, and still billing, behind a success.
+            await killPromise
+            // A stream that already failed (8 MiB overflow, or progressive
+            // output diverging from the capture) is real data loss. A kill
+            // racing it must not erase that from the exit path.
+            if (
+              transportError === undefined &&
+              stdout.failure === undefined &&
+              stderr.failure === undefined
+            ) {
+              return KILLED_EXIT_CODE
+            }
+          } catch (terminationError) {
+            if (terminationError !== error) {
+              stdout.fail(error)
+              stderr.fail(error)
+              throw this.cleanupFailure(error, terminationError, name)
+            }
+          }
         }
         stdout.fail(error)
         stderr.fail(error)
@@ -999,7 +1035,12 @@ export class BlaxelHandle implements SandboxHandle {
     const completion = terminal.then(
       async (exitCode) => {
         closeControls()
-        await this.cleanupCapturedOutput(bounded.outputDir)
+        // Matches `exec`: the exit code is in hand, so a failed scratch-dir
+        // removal must not turn a completed process into a rejected wait().
+        // `kill()` has usually removed this directory already.
+        await this.cleanupCapturedOutput(bounded.outputDir).catch(
+          () => undefined,
+        )
         return exitCode
       },
       async (error: unknown) => {
@@ -1077,6 +1118,10 @@ export class BlaxelHandle implements SandboxHandle {
       token: token.value,
       headers: { 'X-Blaxel-Preview-Token': token.value },
     }
+  }
+
+  fork = (): Promise<SandboxHandle> => {
+    throw new UnsupportedCapabilityError('blaxel', 'fork')
   }
 
   destroy(): Promise<void> {

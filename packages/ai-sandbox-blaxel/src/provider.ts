@@ -130,6 +130,15 @@ function randomName(): string {
  * @blaxel/core keeps one credential set in process-global settings. Refuse to
  * overwrite an already configured tenant: doing so could route an existing
  * provider's later requests into a different workspace.
+ *
+ * This catches a tenant configured through `initialize()` — which is how every
+ * other provider in this process gets one. It cannot see a tenant that came
+ * from `bl login` (`~/.blaxel/config.yaml`), because the SDK resolves those
+ * lazily through its `credentials` getter and never writes `settings.config`.
+ * Reading that getter here would force the config-file read (and its
+ * `process.env.BL_ENV` mutation) that importing @blaxel/core deliberately
+ * avoids, so the narrower check is the right trade: passing explicit
+ * credentials to this provider is an explicit request to use them.
  */
 function configureBlaxelSdk(apiKey: string, workspace: string): void {
   // A fresh @blaxel/core 0.3.10 install exposes empty strings for its legacy

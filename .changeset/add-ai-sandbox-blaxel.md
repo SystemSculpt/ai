@@ -22,3 +22,10 @@ Created sandboxes carry a `1h` TTL by default so an abandoned run cannot strand
 a paid sandbox; pass `ttl: null` to manage lifetime yourself. Previews are
 token-gated by default, and the returned channel reports both the token and the
 ready-to-send `X-Blaxel-Preview-Token` header.
+
+A spawned process reports termination honestly: if `kill()` cannot reap the
+remote process group, `wait()` rejects with that failure instead of resolving
+the kill exit code, so a sandbox that is still running and still billing cannot
+hide behind a clean exit. A stream that already failed is reported for the same
+reason. `fs.write()` creates missing parent directories, and `fork()` throws
+`UnsupportedCapabilityError` rather than being absent.
