@@ -4,9 +4,9 @@
  * sandbox paths (default workspace root `/workspace`).
  *
  * Filesystem data ops (read/readBytes/write/list/mkdir/remove) use Blaxel's
- * native filesystem endpoints; `rename` shells out through `exec` and `exists`
- * through a bare `test -e` probe because the filesystem API has no move or
- * stat call. Commands run through Blaxel's
+ * native filesystem endpoints; `rename` shells out through `exec`, `exists`
+ * through a bare `test -e` probe, and `lstat` through GNU `stat -c '%f:%s'`
+ * because the filesystem API has no move or stat call. Commands run through Blaxel's
  * process API, which reports stdout, stderr, and the exit code as separate
  * fields, so no output demultiplexing is needed.
  */
@@ -593,13 +593,19 @@ export class BlaxelHandle implements SandboxHandle {
       keepAlive: true,
       timeout: PROCESS_REAPER_TIMEOUT_SECONDS,
     })
+    // Client-side wait is the completion bound: SDK wait throws at maxWait.
+    // keepAlive avoids the SDK's default keep-alive timeout, matching spawn.
     const result = await this.sandbox.process.wait(name, {
       maxWait: PROCESS_REAPER_TIMEOUT_SECONDS * 1000,
       interval: 250,
     })
-    if (result.exitCode !== 0) {
+    const exitCode = result.exitCode
+    const finished =
+      (result.status === 'completed' || result.status === 'failed') &&
+      Number.isInteger(exitCode)
+    if (!finished || exitCode !== 0) {
       throw new Error(
-        `blaxel: remote process-group reaper exited ${result.exitCode ?? 'without a status'}.`,
+        `blaxel: remote process-group reaper exited ${exitCode ?? 'without a status'} (status=${String(result.status)}).`,
       )
     }
   }
@@ -759,7 +765,7 @@ export class BlaxelHandle implements SandboxHandle {
     }
     if (result.exitCode !== 0) {
       const stderr = result.stderr ?? ''
-      if (/No such file or directory|Not a directory/.test(stderr)) {
+      if (stderr.includes('No such file or directory')) {
         return undefined
       }
       throw new Error(
@@ -1338,15 +1344,10 @@ function mayHaveStartedProcess(error: unknown): boolean {
   )
 }
 
-export function parseLstatOutput(output: string): SandboxFsStat {
-  const fields = /^(?<mode>[0-9a-fA-F]{3,4}):(?<size>\d+)\s*$/.exec(output)
-  const mode = fields?.groups?.mode
-  const size = fields?.groups?.size
-  if (!mode || !size) {
-    throw new Error(`blaxel: invalid lstat output: ${JSON.stringify(output)}`)
-  }
-  const parsedMode = Number.parseInt(mode, 16)
-  const parsedSize = Number(size)
+function parseLstatOutput(output: string): SandboxFsStat {
+  const fields = /^([0-9a-fA-F]{3,4}):(\d+)\s*$/.exec(output)
+  const parsedMode = Number.parseInt(fields?.[1] ?? '', 16)
+  const parsedSize = Number(fields?.[2])
   if (!Number.isSafeInteger(parsedMode) || !Number.isSafeInteger(parsedSize)) {
     throw new Error(`blaxel: invalid lstat output: ${JSON.stringify(output)}`)
   }

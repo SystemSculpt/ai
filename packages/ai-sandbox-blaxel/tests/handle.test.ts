@@ -32,6 +32,7 @@ interface FakeOptions {
   streamLines?: Array<{ stream: 'stdout' | 'stderr'; line: string }>
   onRm?: (path: string, recursive?: boolean) => Promise<unknown>
   onReap?: () => Promise<unknown>
+  reapWait?: () => Promise<BlaxelProcessLike>
 }
 
 function fakeSandbox(options: FakeOptions = {}): {
@@ -56,11 +57,12 @@ function fakeSandbox(options: FakeOptions = {}): {
     return {}
   })
   const kill = vi.fn(async () => options.onKill?.() ?? {})
-  const wait = vi.fn(async (name: string) =>
-    name.startsWith('tanstack-ai-reap-')
-      ? { exitCode: 0 }
-      : (options.waitResult ?? { exitCode: 7 }),
-  )
+  const wait = vi.fn(async (name: string) => {
+    if (name.startsWith('tanstack-ai-reap-')) {
+      return options.reapWait?.() ?? { exitCode: 0, status: 'completed' }
+    }
+    return options.waitResult ?? { exitCode: 7 }
+  })
   const streamLogs = vi.fn(
     (
       identifier: string,
@@ -235,7 +237,7 @@ function makeHandle(
 }
 
 describe('BlaxelHandle capabilities', () => {
-  it('keeps unproven and unsupported capabilities disabled', () => {
+  it('advertises killable processes and durable fs; snapshots, fork, and stdin stay off', () => {
     expect(BLAXEL_CAPS.snapshots).toBe(false)
     expect(BLAXEL_CAPS.fork).toBe(false)
     expect(BLAXEL_CAPS.durableFilesystem).toBe(true)
@@ -328,7 +330,7 @@ describe('BlaxelHandle filesystem', () => {
     const file = makeHandle({
       onExec: () => ({ exitCode: 0, stdout: '81a4:42\n' }),
     })
-    expect(await file.handle.fs.lstat?.('/workspace/a.txt')).toEqual({
+    expect(await file.handle.fs.lstat!('/workspace/a.txt')).toEqual({
       type: 'file',
       mode: 0o100644,
       size: 42,
@@ -342,7 +344,7 @@ describe('BlaxelHandle filesystem', () => {
     const dir = makeHandle({
       onExec: () => ({ exitCode: 0, stdout: '41ed:4096' }),
     })
-    expect(await dir.handle.fs.lstat?.('/workspace')).toEqual({
+    expect(await dir.handle.fs.lstat!('/workspace')).toEqual({
       type: 'dir',
       mode: 0o040755,
     })
@@ -350,7 +352,7 @@ describe('BlaxelHandle filesystem', () => {
     const link = makeHandle({
       onExec: () => ({ exitCode: 0, stdout: 'a1ff:7' }),
     })
-    expect(await link.handle.fs.lstat?.('/workspace/link')).toEqual({
+    expect(await link.handle.fs.lstat!('/workspace/link')).toEqual({
       type: 'symlink',
       mode: 0o120777,
     })
@@ -364,7 +366,7 @@ describe('BlaxelHandle filesystem', () => {
           "stat: cannot statx '/workspace/nope': No such file or directory\n",
       }),
     })
-    expect(await missing.handle.fs.lstat?.('/workspace/nope')).toBeUndefined()
+    expect(await missing.handle.fs.lstat!('/workspace/nope')).toBeUndefined()
 
     const denied = makeHandle({
       onExec: () => ({
@@ -372,15 +374,41 @@ describe('BlaxelHandle filesystem', () => {
         stderr: "stat: cannot statx '/root/x': Permission denied\n",
       }),
     })
-    await expect(denied.handle.fs.lstat?.('/root/x')).rejects.toThrow(
+    await expect(denied.handle.fs.lstat!('/root/x')).rejects.toThrow(
       /Permission denied/,
     )
 
     const garbage = makeHandle({
       onExec: () => ({ exitCode: 0, stdout: 'ok' }),
     })
-    await expect(garbage.handle.fs.lstat?.('/workspace/a')).rejects.toThrow(
+    await expect(garbage.handle.fs.lstat!('/workspace/a')).rejects.toThrow(
       /invalid lstat output/,
+    )
+
+    const notADirectory = makeHandle({
+      onExec: () => ({
+        exitCode: 1,
+        stderr:
+          "stat: cannot statx '/workspace/a.txt/nested': Not a directory\n",
+      }),
+    })
+    await expect(
+      notADirectory.handle.fs.lstat!('/workspace/a.txt/nested'),
+    ).rejects.toThrow(/Not a directory/)
+  })
+
+  it('maps lstat onto a custom workdir', async () => {
+    const { handle, fake } = makeHandle(
+      { onExec: () => ({ exitCode: 0, stdout: '81a4:42\n' }) },
+      { workdir: '/home/agent' },
+    )
+    expect(await handle.fs.lstat!('/workspace/a.txt')).toEqual({
+      type: 'file',
+      mode: 0o100644,
+      size: 42,
+    })
+    expect(fake.execCalls[0]?.command).toBe(
+      "LC_ALL=C stat -c '%f:%s' -- '/home/agent/a.txt'",
     )
   })
 
@@ -735,6 +763,62 @@ describe('BlaxelHandle process', () => {
     expect(fake.rm).toHaveBeenCalledWith(
       expect.stringMatching(/^\/tmp\/tanstack-ai-output-/),
       true,
+    )
+  })
+
+  it.each([
+    {
+      name: 'still running',
+      reapWait: async () => ({ status: 'running', exitCode: 0 }),
+      pattern: /status=running/,
+    },
+    {
+      name: 'completed without an exit code',
+      reapWait: async () => ({ status: 'completed' }),
+      pattern: /without a status/,
+    },
+    {
+      name: 'failed with a non-zero exit',
+      reapWait: async () => ({ status: 'failed', exitCode: 1 }),
+      pattern: /exited 1/,
+    },
+  ] as const)(
+    'rejects kill when reaper wait is $name',
+    async ({ reapWait, pattern }) => {
+      const { handle } = makeHandle({
+        onExec: () => ({ pid: '1' }),
+        reapWait,
+      })
+      const spawned = await handle.process.spawn('sleep 30')
+      const error = await spawned.kill().then(
+        () => undefined,
+        (caught: unknown) => caught,
+      )
+      expect(error).toBeInstanceOf(AggregateError)
+      expect((error as AggregateError).message).toMatch(
+        /failed to fully terminate/,
+      )
+      expect((error as AggregateError).errors.map(String).join('\n')).toMatch(
+        pattern,
+      )
+    },
+  )
+
+  it('rejects kill when reaper wait times out', async () => {
+    const { handle } = makeHandle({
+      onExec: () => ({ pid: '1' }),
+      reapWait: async () => {
+        throw new Error('Process did not finish in time')
+      },
+    })
+    const spawned = await handle.process.spawn('sleep 30')
+    const error = await spawned.kill().then(
+      () => undefined,
+      (caught: unknown) => caught,
+    )
+    expect(error).toBeInstanceOf(AggregateError)
+    expect((error as AggregateError).errors.map(String).join('\n')).toMatch(
+      /did not finish in time/,
     )
   })
 

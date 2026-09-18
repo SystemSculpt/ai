@@ -150,10 +150,11 @@ describe('blaxelSandbox credentials', () => {
     delete process.env.BL_API_KEY
     delete process.env.BL_WORKSPACE
     sdkResolvedWorkspace = 'cli-workspace'
-    expect(() => blaxelSandbox()).not.toThrow()
-    expect(() => blaxelSandbox({ workspace: 'cli-workspace' })).not.toThrow()
-    // The SDK already holds the session; re-initializing would discard it.
-    expect(initialize).not.toHaveBeenCalled()
+    blaxelSandbox()
+    blaxelSandbox({ workspace: 'cli-workspace' })
+    // Workspace-only initialize leaves the CLI session in place.
+    expect(initialize).toHaveBeenCalledTimes(1)
+    expect(initialize).toHaveBeenCalledWith({ workspace: 'cli-workspace' })
   })
 
   it('rejects a requested workspace the `bl login` session does not cover', () => {
@@ -163,6 +164,28 @@ describe('blaxelSandbox credentials', () => {
     expect(() => blaxelSandbox({ workspace: 'other' })).toThrow(
       /belong to workspace "cli-workspace".*"other".*bl login other/,
     )
+  })
+
+  it('rejects an API-key provider for a different workspace after CLI login', () => {
+    delete process.env.BL_API_KEY
+    delete process.env.BL_WORKSPACE
+    sdkResolvedWorkspace = 'cli-workspace'
+    blaxelSandbox()
+    expect(() => blaxelSandbox({ apiKey: 'k', workspace: 'other' })).toThrow(
+      /process-global/,
+    )
+  })
+
+  it('allows an API key for the same workspace after CLI login', () => {
+    delete process.env.BL_API_KEY
+    delete process.env.BL_WORKSPACE
+    sdkResolvedWorkspace = 'cli-workspace'
+    blaxelSandbox()
+    blaxelSandbox({ apiKey: 'k', workspace: 'cli-workspace' })
+    expect(initialize).toHaveBeenLastCalledWith({
+      workspace: 'cli-workspace',
+      apiKey: 'k',
+    })
   })
 
   it('accepts the empty config defaults from @blaxel/core 0.3.10', () => {
