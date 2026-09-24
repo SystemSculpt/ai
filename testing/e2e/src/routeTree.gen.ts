@@ -53,6 +53,7 @@ import { Route as ApiToolCallLifecycleWireRouteImport } from './routes/api.tool-
 import { Route as ApiTextFirstToolWireRouteImport } from './routes/api.text-first-tool-wire'
 import { Route as ApiSummarizeRouteImport } from './routes/api.summarize'
 import { Route as ApiSubagentsTestRouteImport } from './routes/api.subagents-test'
+import { Route as ApiStructuredOutputLengthWireRouteImport } from './routes/api.structured-output-length-wire'
 import { Route as ApiSandboxToolHistoryRouteImport } from './routes/api.sandbox-tool-history'
 import { Route as ApiSandboxFilePersistenceRouteImport } from './routes/api.sandbox-file-persistence'
 import { Route as ApiSandboxDurabilityRouteImport } from './routes/api.sandbox-durability'
@@ -108,6 +109,7 @@ import { Route as ApiByteplusSeedance1080pWireRouteImport } from './routes/api.b
 import { Route as ApiByokChatRouteImport } from './routes/api.byok-chat'
 import { Route as ApiAudioRouteImport } from './routes/api.audio'
 import { Route as ApiArktypeToolWireRouteImport } from './routes/api.arktype-tool-wire'
+import { Route as ApiAnthropicThinkingOrderWireRouteImport } from './routes/api.anthropic-thinking-order-wire'
 import { Route as ApiAnthropicStructuredUsageRouteImport } from './routes/api.anthropic-structured-usage'
 import { Route as ApiAnthropicSkillsWireRouteImport } from './routes/api.anthropic-skills-wire'
 import { Route as ApiAnthropicMultiTurnStructuredWireRouteImport } from './routes/api.anthropic-multi-turn-structured-wire'
@@ -343,6 +345,12 @@ const ApiSubagentsTestRoute = ApiSubagentsTestRouteImport.update({
   path: '/api/subagents-test',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiStructuredOutputLengthWireRoute =
+  ApiStructuredOutputLengthWireRouteImport.update({
+    id: '/api/structured-output-length-wire',
+    path: '/api/structured-output-length-wire',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiSandboxToolHistoryRoute = ApiSandboxToolHistoryRouteImport.update({
   id: '/api/sandbox-tool-history',
   path: '/api/sandbox-tool-history',
@@ -633,6 +641,12 @@ const ApiArktypeToolWireRoute = ApiArktypeToolWireRouteImport.update({
   path: '/api/arktype-tool-wire',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAnthropicThinkingOrderWireRoute =
+  ApiAnthropicThinkingOrderWireRouteImport.update({
+    id: '/api/anthropic-thinking-order-wire',
+    path: '/api/anthropic-thinking-order-wire',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAnthropicStructuredUsageRoute =
   ApiAnthropicStructuredUsageRouteImport.update({
     id: '/api/anthropic-structured-usage',
@@ -729,6 +743,7 @@ export interface FileRoutesByFullPath {
   '/api/anthropic-opus-5-combined-wire': typeof ApiAnthropicOpus5CombinedWireRoute
   '/api/anthropic-skills-wire': typeof ApiAnthropicSkillsWireRoute
   '/api/anthropic-structured-usage': typeof ApiAnthropicStructuredUsageRoute
+  '/api/anthropic-thinking-order-wire': typeof ApiAnthropicThinkingOrderWireRoute
   '/api/arktype-tool-wire': typeof ApiArktypeToolWireRoute
   '/api/audio': typeof ApiAudioRouteWithChildren
   '/api/byok-chat': typeof ApiByokChatRoute
@@ -784,6 +799,7 @@ export interface FileRoutesByFullPath {
   '/api/sandbox-durability': typeof ApiSandboxDurabilityRoute
   '/api/sandbox-file-persistence': typeof ApiSandboxFilePersistenceRoute
   '/api/sandbox-tool-history': typeof ApiSandboxToolHistoryRoute
+  '/api/structured-output-length-wire': typeof ApiStructuredOutputLengthWireRoute
   '/api/subagents-test': typeof ApiSubagentsTestRoute
   '/api/summarize': typeof ApiSummarizeRoute
   '/api/text-first-tool-wire': typeof ApiTextFirstToolWireRoute
@@ -841,6 +857,7 @@ export interface FileRoutesByTo {
   '/api/anthropic-opus-5-combined-wire': typeof ApiAnthropicOpus5CombinedWireRoute
   '/api/anthropic-skills-wire': typeof ApiAnthropicSkillsWireRoute
   '/api/anthropic-structured-usage': typeof ApiAnthropicStructuredUsageRoute
+  '/api/anthropic-thinking-order-wire': typeof ApiAnthropicThinkingOrderWireRoute
   '/api/arktype-tool-wire': typeof ApiArktypeToolWireRoute
   '/api/audio': typeof ApiAudioRouteWithChildren
   '/api/byok-chat': typeof ApiByokChatRoute
@@ -896,6 +913,7 @@ export interface FileRoutesByTo {
   '/api/sandbox-durability': typeof ApiSandboxDurabilityRoute
   '/api/sandbox-file-persistence': typeof ApiSandboxFilePersistenceRoute
   '/api/sandbox-tool-history': typeof ApiSandboxToolHistoryRoute
+  '/api/structured-output-length-wire': typeof ApiStructuredOutputLengthWireRoute
   '/api/subagents-test': typeof ApiSubagentsTestRoute
   '/api/summarize': typeof ApiSummarizeRoute
   '/api/text-first-tool-wire': typeof ApiTextFirstToolWireRoute
@@ -954,6 +972,7 @@ export interface FileRoutesById {
   '/api/anthropic-opus-5-combined-wire': typeof ApiAnthropicOpus5CombinedWireRoute
   '/api/anthropic-skills-wire': typeof ApiAnthropicSkillsWireRoute
   '/api/anthropic-structured-usage': typeof ApiAnthropicStructuredUsageRoute
+  '/api/anthropic-thinking-order-wire': typeof ApiAnthropicThinkingOrderWireRoute
   '/api/arktype-tool-wire': typeof ApiArktypeToolWireRoute
   '/api/audio': typeof ApiAudioRouteWithChildren
   '/api/byok-chat': typeof ApiByokChatRoute
@@ -1009,6 +1028,7 @@ export interface FileRoutesById {
   '/api/sandbox-durability': typeof ApiSandboxDurabilityRoute
   '/api/sandbox-file-persistence': typeof ApiSandboxFilePersistenceRoute
   '/api/sandbox-tool-history': typeof ApiSandboxToolHistoryRoute
+  '/api/structured-output-length-wire': typeof ApiStructuredOutputLengthWireRoute
   '/api/subagents-test': typeof ApiSubagentsTestRoute
   '/api/summarize': typeof ApiSummarizeRoute
   '/api/text-first-tool-wire': typeof ApiTextFirstToolWireRoute
@@ -1068,6 +1088,7 @@ export interface FileRouteTypes {
     | '/api/anthropic-opus-5-combined-wire'
     | '/api/anthropic-skills-wire'
     | '/api/anthropic-structured-usage'
+    | '/api/anthropic-thinking-order-wire'
     | '/api/arktype-tool-wire'
     | '/api/audio'
     | '/api/byok-chat'
@@ -1123,6 +1144,7 @@ export interface FileRouteTypes {
     | '/api/sandbox-durability'
     | '/api/sandbox-file-persistence'
     | '/api/sandbox-tool-history'
+    | '/api/structured-output-length-wire'
     | '/api/subagents-test'
     | '/api/summarize'
     | '/api/text-first-tool-wire'
@@ -1180,6 +1202,7 @@ export interface FileRouteTypes {
     | '/api/anthropic-opus-5-combined-wire'
     | '/api/anthropic-skills-wire'
     | '/api/anthropic-structured-usage'
+    | '/api/anthropic-thinking-order-wire'
     | '/api/arktype-tool-wire'
     | '/api/audio'
     | '/api/byok-chat'
@@ -1235,6 +1258,7 @@ export interface FileRouteTypes {
     | '/api/sandbox-durability'
     | '/api/sandbox-file-persistence'
     | '/api/sandbox-tool-history'
+    | '/api/structured-output-length-wire'
     | '/api/subagents-test'
     | '/api/summarize'
     | '/api/text-first-tool-wire'
@@ -1292,6 +1316,7 @@ export interface FileRouteTypes {
     | '/api/anthropic-opus-5-combined-wire'
     | '/api/anthropic-skills-wire'
     | '/api/anthropic-structured-usage'
+    | '/api/anthropic-thinking-order-wire'
     | '/api/arktype-tool-wire'
     | '/api/audio'
     | '/api/byok-chat'
@@ -1347,6 +1372,7 @@ export interface FileRouteTypes {
     | '/api/sandbox-durability'
     | '/api/sandbox-file-persistence'
     | '/api/sandbox-tool-history'
+    | '/api/structured-output-length-wire'
     | '/api/subagents-test'
     | '/api/summarize'
     | '/api/text-first-tool-wire'
@@ -1405,6 +1431,7 @@ export interface RootRouteChildren {
   ApiAnthropicOpus5CombinedWireRoute: typeof ApiAnthropicOpus5CombinedWireRoute
   ApiAnthropicSkillsWireRoute: typeof ApiAnthropicSkillsWireRoute
   ApiAnthropicStructuredUsageRoute: typeof ApiAnthropicStructuredUsageRoute
+  ApiAnthropicThinkingOrderWireRoute: typeof ApiAnthropicThinkingOrderWireRoute
   ApiArktypeToolWireRoute: typeof ApiArktypeToolWireRoute
   ApiAudioRoute: typeof ApiAudioRouteWithChildren
   ApiByokChatRoute: typeof ApiByokChatRoute
@@ -1460,6 +1487,7 @@ export interface RootRouteChildren {
   ApiSandboxDurabilityRoute: typeof ApiSandboxDurabilityRoute
   ApiSandboxFilePersistenceRoute: typeof ApiSandboxFilePersistenceRoute
   ApiSandboxToolHistoryRoute: typeof ApiSandboxToolHistoryRoute
+  ApiStructuredOutputLengthWireRoute: typeof ApiStructuredOutputLengthWireRoute
   ApiSubagentsTestRoute: typeof ApiSubagentsTestRoute
   ApiSummarizeRoute: typeof ApiSummarizeRoute
   ApiTextFirstToolWireRoute: typeof ApiTextFirstToolWireRoute
@@ -1784,6 +1812,13 @@ declare module '@tanstack/react-router' {
       path: '/api/subagents-test'
       fullPath: '/api/subagents-test'
       preLoaderRoute: typeof ApiSubagentsTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/structured-output-length-wire': {
+      id: '/api/structured-output-length-wire'
+      path: '/api/structured-output-length-wire'
+      fullPath: '/api/structured-output-length-wire'
+      preLoaderRoute: typeof ApiStructuredOutputLengthWireRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/sandbox-tool-history': {
@@ -2171,6 +2206,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiArktypeToolWireRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/anthropic-thinking-order-wire': {
+      id: '/api/anthropic-thinking-order-wire'
+      path: '/api/anthropic-thinking-order-wire'
+      fullPath: '/api/anthropic-thinking-order-wire'
+      preLoaderRoute: typeof ApiAnthropicThinkingOrderWireRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/anthropic-structured-usage': {
       id: '/api/anthropic-structured-usage'
       path: '/api/anthropic-structured-usage'
@@ -2347,6 +2389,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAnthropicOpus5CombinedWireRoute: ApiAnthropicOpus5CombinedWireRoute,
   ApiAnthropicSkillsWireRoute: ApiAnthropicSkillsWireRoute,
   ApiAnthropicStructuredUsageRoute: ApiAnthropicStructuredUsageRoute,
+  ApiAnthropicThinkingOrderWireRoute: ApiAnthropicThinkingOrderWireRoute,
   ApiArktypeToolWireRoute: ApiArktypeToolWireRoute,
   ApiAudioRoute: ApiAudioRouteWithChildren,
   ApiByokChatRoute: ApiByokChatRoute,
@@ -2402,6 +2445,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSandboxDurabilityRoute: ApiSandboxDurabilityRoute,
   ApiSandboxFilePersistenceRoute: ApiSandboxFilePersistenceRoute,
   ApiSandboxToolHistoryRoute: ApiSandboxToolHistoryRoute,
+  ApiStructuredOutputLengthWireRoute: ApiStructuredOutputLengthWireRoute,
   ApiSubagentsTestRoute: ApiSubagentsTestRoute,
   ApiSummarizeRoute: ApiSummarizeRoute,
   ApiTextFirstToolWireRoute: ApiTextFirstToolWireRoute,
