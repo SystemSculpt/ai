@@ -12,7 +12,11 @@ const credentialsAvailable = Boolean(apiKey && workspace)
 runJournalConformance({
   name: 'blaxel',
   createHandle: async () => {
-    const provider = blaxelSandbox({ apiKey, workspace, region: process.env.BL_REGION })
+    const provider = blaxelSandbox({
+      apiKey,
+      workspace,
+      region: process.env.BL_REGION,
+    })
     const handle = await provider.create({})
     return { handle, dispose: () => handle.destroy() }
   },
